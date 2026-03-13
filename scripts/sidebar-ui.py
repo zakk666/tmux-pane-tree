@@ -11,6 +11,7 @@ from pathlib import Path
 
 
 STATE_DIR = Path(os.environ.get("TMUX_SIDEBAR_STATE_DIR", str(Path.home() / ".tmux-sidebar/state")))
+DEFAULT_SIDEBAR_WIDTH = 35
 
 
 def run_tmux(*args: str) -> str:
@@ -31,6 +32,17 @@ def tmux_option(option_name: str) -> str:
         return run_tmux("show-options", "-gv", option_name).strip()
     except subprocess.CalledProcessError:
         return ""
+
+
+def configured_sidebar_width() -> int:
+    for raw_width in (os.environ.get("TMUX_SIDEBAR_WIDTH", ""), tmux_option("@tmux_sidebar_width"), str(DEFAULT_SIDEBAR_WIDTH)):
+        try:
+            width = int(raw_width)
+        except (TypeError, ValueError):
+            continue
+        if width > 0:
+            return width
+    return DEFAULT_SIDEBAR_WIDTH
 
 
 def sidebar_has_focus() -> bool:
@@ -135,7 +147,19 @@ def load_tree() -> list[dict]:
     return rows
 
 
-def render_rows(rows: list[dict], selected_pane_id: str | None = None) -> list[str]:
+def truncate_line(line: str, width: int | None) -> str:
+    if width is None:
+        return line
+    if width <= 0:
+        return ""
+    if len(line) <= width:
+        return line
+    if width == 1:
+        return "…"
+    return line[: width - 1] + "…"
+
+
+def render_rows(rows: list[dict], selected_pane_id: str | None = None, max_width: int | None = None) -> list[str]:
     rendered: list[str] = []
     selected_row = next(
         (index for index, row in enumerate(rows) if row["kind"] == "pane" and row["pane_id"] == selected_pane_id),
@@ -143,12 +167,12 @@ def render_rows(rows: list[dict], selected_pane_id: str | None = None) -> list[s
     )
     for index, row in enumerate(rows):
         prefix = "▶ " if index == selected_row else "  "
-        rendered.append(prefix + row["text"])
+        rendered.append(truncate_line(prefix + row["text"], max_width))
     return rendered
 
 
 def dump_render() -> None:
-    print("\n".join(render_rows(load_tree(), tmux_option("@tmux_sidebar_main_pane"))))
+    print("\n".join(render_rows(load_tree(), tmux_option("@tmux_sidebar_main_pane"), configured_sidebar_width() - 1)))
 
 
 def focus_main_pane() -> None:
@@ -177,7 +201,7 @@ def interactive() -> None:
                 selected_pane_id = ""
 
             stdscr.erase()
-            for y, line in enumerate(render_rows(rows, selected_pane_id)):
+            for y, line in enumerate(render_rows(rows, selected_pane_id, max(0, curses.COLS - 1))):
                 if y >= curses.LINES:
                     break
                 stdscr.addnstr(y, 0, line, max(0, curses.COLS - 1))

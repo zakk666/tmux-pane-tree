@@ -29,3 +29,15 @@ case "$output" in
 esac
 assert_contains "$output" '└─ solo'
 assert_contains "$output" '%77 python3'
+
+fake_tmux_set_tree <<'EOF'
+work|@1|editor|%2|superlongpanecommand|superlongpanecommand|1
+EOF
+printf '14\n' > "$TEST_TMUX_DATA_DIR/option__tmux_sidebar_width.txt"
+
+output="$(python3 scripts/sidebar-ui.py --dump-render 2>&1)"
+
+assert_contains "$output" '…'
+case "$output" in
+  *'superlongpanecommand'* ) fail "sidebar UI should truncate long rows for narrow widths" ;;
+esac
