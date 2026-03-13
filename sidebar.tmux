@@ -14,3 +14,5 @@ set-hook -g client-session-changed[211] "run-shell -b '#{d:current_file}/scripts
 set-hook -g after-select-window[212] "run-shell -b '#{d:current_file}/scripts/remember-main-pane.sh #{pane_id}'"
 set-hook -g after-select-pane[213] "run-shell -b '#{d:current_file}/scripts/remember-main-pane.sh #{pane_id}'"
 set-hook -g window-pane-changed[214] "run-shell -b '#{d:current_file}/scripts/remember-main-pane.sh #{pane_id}'"
+set-hook -g session-window-changed[215] "run-shell -b '#{d:current_file}/scripts/ensure-sidebar-pane.sh'"
+set-hook -g session-window-changed[216] "run-shell -b '#{d:current_file}/scripts/remember-main-pane.sh #{pane_id}'"
