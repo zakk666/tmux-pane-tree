@@ -6,6 +6,8 @@ A tmux plugin that gives you a persistent, interactive session tree on the left
 side of every window — with live agent status badges for `claude`, `codex`, and
 `opencode`.
 
+![tmux-sidebar showcase](images/showcase.gif)
+
 ```
   ┌─ Sidebar ──────────┬─────────────────────────────────┐
   │                     │                                 │
