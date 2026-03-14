@@ -21,3 +21,19 @@ EOF
 bash scripts/clear-pane-state.sh "%8"
 
 assert_file_contains "$TMUX_SIDEBAR_STATE_DIR/pane-%8.json" '"status":"running"'
+
+cat > "$TMUX_SIDEBAR_STATE_DIR/pane-%9.json" <<'EOF'
+{"pane_id":"%9","app":"codex","status":"done","updated_at":100}
+EOF
+
+bash scripts/clear-pane-state.sh "%9"
+
+assert_file_contains "$TMUX_SIDEBAR_STATE_DIR/pane-%9.json" '"status":"idle"'
+
+cat > "$TMUX_SIDEBAR_STATE_DIR/pane-%10.json" <<'EOF'
+{"pane_id":"%10","app":"codex","status":"running","updated_at":100}
+EOF
+
+bash scripts/clear-pane-state.sh "%10"
+
+assert_file_contains "$TMUX_SIDEBAR_STATE_DIR/pane-%10.json" '"status":"idle"'

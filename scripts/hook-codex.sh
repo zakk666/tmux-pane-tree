@@ -40,21 +40,59 @@ raw_event = str(
 ).strip().lower().replace("_", "-")
 
 notif_type = str(data.get("notification_type") or "").strip().lower()
+status_hint = str(data.get("status") or data.get("state") or "").strip().lower().replace("_", "-")
 message = str(data.get("summary") or data.get("transcript_summary") or data.get("message") or "").strip()
+message_hint = message.lower()
 
-if (
+done_events = {
+    "agent-turn-complete",
+    "complete",
+    "completed",
+    "done",
+    "finish",
+    "finished",
+    "session-end",
+    "stop",
+    "stopped",
+    "task-complete",
+    "turn-complete",
+}
+done_statuses = {
+    "complete",
+    "completed",
+    "done",
+    "finished",
+    "stopped",
+}
+idle_statuses = {
+    "idle",
+    "ready",
+    "waiting",
+}
+
+if notif_type == "idle_prompt" or raw_event == "idle-prompt" or status_hint in idle_statuses:
+    status = "idle"
+elif (
     raw_event.startswith("permission")
     or raw_event.startswith("approve")
-    or raw_event in ("approval-requested", "approval-needed", "input-required", "idle-prompt")
+    or raw_event in ("approval-requested", "approval-needed", "input-required")
     or notif_type == "permission_prompt"
 ):
     status = "needs-input"
 elif raw_event.startswith("error") or raw_event.startswith("fail"):
     status = "error"
 elif raw_event in ("start", "session-start"):
+    status = "idle"
+elif status_hint == "running":
     status = "running"
-else:
+elif raw_event in done_events or status_hint in done_statuses:
     status = "done"
+elif not raw_event and not status_hint and not notif_type and not message:
+    status = "idle"
+elif message_hint in ("ready", "idle", "waiting"):
+    status = "idle"
+else:
+    status = "running"
 
 print(status)
 print(message)

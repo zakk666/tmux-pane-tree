@@ -31,6 +31,18 @@ assert_file_contains "$TEST_HOOK_CAPTURE" '--app claude'
 assert_file_contains "$TEST_HOOK_CAPTURE" '--status needs-input'
 assert_file_contains "$TEST_HOOK_CAPTURE" '--pane %7'
 
+export TEST_HOOK_CAPTURE="$TEST_TMP/claude-hook-idle-prompt.txt"
+printf '%s' '{"hook_event_name":"Notification","notification_type":"idle_prompt"}' | bash scripts/hook-claude.sh
+assert_file_contains "$TEST_HOOK_CAPTURE" '--status idle'
+
+export TEST_HOOK_CAPTURE="$TEST_TMP/claude-hook-start.txt"
+printf '%s' '{"hook_event_name":"SessionStart"}' | bash scripts/hook-claude.sh
+assert_file_contains "$TEST_HOOK_CAPTURE" '--status idle'
+
+export TEST_HOOK_CAPTURE="$TEST_TMP/claude-hook-submit.txt"
+printf '%s' '{"hook_event_name":"UserPromptSubmit"}' | bash scripts/hook-claude.sh
+assert_file_contains "$TEST_HOOK_CAPTURE" '--status running'
+
 export TEST_HOOK_CAPTURE="$TEST_TMP/codex-hook.txt"
 export TEST_PEON_CAPTURE="$TEST_TMP/peon-argv.txt"
 export TEST_PEON_STDIN_CAPTURE="$TEST_TMP/peon-stdin.txt"
@@ -40,3 +52,28 @@ assert_file_contains "$TEST_HOOK_CAPTURE" '--app codex'
 assert_file_contains "$TEST_HOOK_CAPTURE" '--status done'
 assert_file_contains "$TEST_PEON_CAPTURE" 'agent-turn-complete'
 assert_file_contains "$TEST_PEON_STDIN_CAPTURE" '"summary":"Finished task"'
+
+export TEST_HOOK_CAPTURE="$TEST_TMP/codex-hook-running.txt"
+printf '%s' '{"summary":"Working"}' | bash scripts/hook-codex.sh
+assert_file_contains "$TEST_HOOK_CAPTURE" '--app codex'
+assert_file_contains "$TEST_HOOK_CAPTURE" '--status running'
+
+export TEST_HOOK_CAPTURE="$TEST_TMP/codex-hook-input.txt"
+printf '%s' '{"notification_type":"permission_prompt","message":"Need approval"}' | bash scripts/hook-codex.sh
+assert_file_contains "$TEST_HOOK_CAPTURE" '--status needs-input'
+
+export TEST_HOOK_CAPTURE="$TEST_TMP/codex-hook-idle-prompt.txt"
+printf '%s' '{"notification_type":"idle_prompt"}' | bash scripts/hook-codex.sh
+assert_file_contains "$TEST_HOOK_CAPTURE" '--status idle'
+
+export TEST_HOOK_CAPTURE="$TEST_TMP/codex-hook-start.txt"
+printf '%s' '{"summary":"Ready"}' | bash scripts/hook-codex.sh start
+assert_file_contains "$TEST_HOOK_CAPTURE" '--status idle'
+
+export TEST_HOOK_CAPTURE="$TEST_TMP/codex-hook-idle-status.txt"
+printf '%s' '{"status":"idle"}' | bash scripts/hook-codex.sh
+assert_file_contains "$TEST_HOOK_CAPTURE" '--status idle'
+
+export TEST_HOOK_CAPTURE="$TEST_TMP/codex-hook-empty.txt"
+printf '' | bash scripts/hook-codex.sh
+assert_file_contains "$TEST_HOOK_CAPTURE" '--status idle'

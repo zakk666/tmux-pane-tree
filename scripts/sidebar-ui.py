@@ -113,18 +113,26 @@ def should_preserve_live_label(command: str, title: str) -> bool:
     return command_token in NON_AGENT_COMMANDS or title_token in NON_AGENT_COMMANDS
 
 
+def state_agent_app(command: str, title: str, state: dict | None) -> str:
+    app = str((state or {}).get("app", "")).strip().lower()
+    status = str((state or {}).get("status", "")).strip().lower()
+    if app not in ("claude", "codex"):
+        return ""
+    if should_preserve_live_label(command, title):
+        return ""
+    if app == "claude" and (looks_like_semver(command) or looks_like_semver(title)):
+        return "claude"
+    if status and status != "idle":
+        return app
+    return ""
+
+
 def live_agent_app(command: str, title: str, state: dict | None) -> str:
     if looks_like_codex(command) or looks_like_codex(title):
         return "codex"
     if looks_like_claude(command) or looks_like_claude(title):
         return "claude"
-
-    app = str((state or {}).get("app", "")).strip().lower()
-    if app == "claude" and not should_preserve_live_label(command, title):
-        if looks_like_semver(command) or looks_like_semver(title):
-            return "claude"
-
-    return ""
+    return state_agent_app(command, title, state)
 
 
 def codex_title_status(title: str) -> str:
@@ -154,12 +162,14 @@ def effective_pane_status(command: str, title: str, state: dict | None) -> str:
 
     status = str((state or {}).get("status", "")).strip().lower()
     if live_app == "codex":
+        if status == "idle":
+            return ""
+        if status in ("running", "needs-input", "error", "done"):
+            return status
         title_status = codex_title_status(title)
         if title_status:
             return title_status
-        if status in ("needs-input", "error"):
-            return status
-        return "running"
+        return ""
 
     return status
 

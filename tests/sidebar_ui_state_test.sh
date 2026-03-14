@@ -52,6 +52,7 @@ rm -f "$TMUX_SIDEBAR_STATE_DIR"/pane-*.json
 output="$(python3 scripts/sidebar-ui.py --dump-render 2>&1)"
 
 assert_contains "$output" 'codex'
+assert_not_contains "$output" '[~]'
 case "$output" in
   *'codex-aarch64-apple-darwin'* ) fail "codex target-triple binary names should normalize to codex" ;;
 esac
@@ -83,6 +84,89 @@ assert_contains "$output" 'zsh'
 case "$output" in
   *'│     └─ claude'* ) fail "stale claude state should not relabel obvious shell panes" ;;
 esac
+
+fake_tmux_set_tree <<'EOF'
+work|@1|editor|%7|zsh|sandu.dorogan@host:~/workdir/tmux-sidebar|1
+EOF
+cat > "$TMUX_SIDEBAR_STATE_DIR/pane-%7.json" <<'EOF'
+{"pane_id":"%7","app":"codex","status":"running","updated_at":100}
+EOF
+
+output="$(python3 scripts/sidebar-ui.py --dump-render 2>&1)"
+
+assert_contains "$output" 'zsh'
+case "$output" in
+  *'[~]'* ) fail "stale codex state should not show a running badge on obvious shell panes" ;;
+esac
+
+fake_tmux_set_tree <<'EOF'
+work|@1|editor|%10|python3|assistant runner|1
+EOF
+cat > "$TMUX_SIDEBAR_STATE_DIR/pane-%10.json" <<'EOF'
+{"pane_id":"%10","app":"claude","status":"running","updated_at":100}
+EOF
+
+output="$(python3 scripts/sidebar-ui.py --dump-render 2>&1)"
+
+assert_contains "$output" 'claude [~]'
+
+fake_tmux_set_tree <<'EOF'
+work|@1|editor|%11|node|repo worker|1
+EOF
+cat > "$TMUX_SIDEBAR_STATE_DIR/pane-%11.json" <<'EOF'
+{"pane_id":"%11","app":"codex","status":"running","updated_at":100}
+EOF
+
+output="$(python3 scripts/sidebar-ui.py --dump-render 2>&1)"
+
+assert_contains "$output" 'codex [~]'
+
+fake_tmux_set_tree <<'EOF'
+work|@1|editor|%8|codex-aarch64-apple-darwin|● project: done|1
+EOF
+cat > "$TMUX_SIDEBAR_STATE_DIR/pane-%8.json" <<'EOF'
+{"pane_id":"%8","app":"codex","status":"running","updated_at":100}
+EOF
+
+output="$(python3 scripts/sidebar-ui.py --dump-render 2>&1)"
+
+assert_contains "$output" 'codex [~]'
+
+fake_tmux_set_tree <<'EOF'
+work|@1|editor|%9|codex-aarch64-apple-darwin|codex --full-auto|1
+EOF
+cat > "$TMUX_SIDEBAR_STATE_DIR/pane-%9.json" <<'EOF'
+{"pane_id":"%9","app":"codex","status":"done","updated_at":100}
+EOF
+
+output="$(python3 scripts/sidebar-ui.py --dump-render 2>&1)"
+
+assert_contains "$output" 'codex [!]'
+
+fake_tmux_set_tree <<'EOF'
+work|@1|editor|%12|codex-aarch64-apple-darwin|codex --full-auto|1
+EOF
+cat > "$TMUX_SIDEBAR_STATE_DIR/pane-%12.json" <<'EOF'
+{"pane_id":"%12","app":"codex","status":"idle","updated_at":100}
+EOF
+
+output="$(python3 scripts/sidebar-ui.py --dump-render 2>&1)"
+
+assert_contains "$output" 'codex'
+assert_not_contains "$output" '[~]'
+
+fake_tmux_set_tree <<'EOF'
+work|@1|editor|%13|codex-aarch64-apple-darwin|● project: done|1
+EOF
+cat > "$TMUX_SIDEBAR_STATE_DIR/pane-%13.json" <<'EOF'
+{"pane_id":"%13","app":"codex","status":"idle","updated_at":100}
+EOF
+
+output="$(python3 scripts/sidebar-ui.py --dump-render 2>&1)"
+
+assert_contains "$output" 'codex'
+assert_not_contains "$output" '[!]'
+assert_not_contains "$output" '[~]'
 
 fake_tmux_set_tree <<'EOF'
 work|@1|editor|%2|superlongpanecommand|superlongpanecommand|1
