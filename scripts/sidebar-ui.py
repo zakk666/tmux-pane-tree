@@ -785,10 +785,10 @@ def run_interactive(stdscr) -> None:
             next_refresh_at = 0.0
         elif action == "close_pane" and target is not None:
             cur_idx = next((i for i, r in enumerate(pane_rows) if r["pane_id"] == target["pane_id"]), 0)
-            if cur_idx > 0:
+            if cur_idx + 1 < len(pane_rows):
+                selected_pane_id = pane_rows[cur_idx + 1]["pane_id"]
+            elif cur_idx > 0:
                 selected_pane_id = pane_rows[cur_idx - 1]["pane_id"]
-            elif len(pane_rows) > 1:
-                selected_pane_id = pane_rows[1]["pane_id"]
             if target["kind"] == "pane":
                 subprocess.run(["tmux", "kill-pane", "-t", target["pane_id"]], check=False)
             elif target["kind"] == "window":
