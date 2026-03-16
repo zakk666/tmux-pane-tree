@@ -103,6 +103,12 @@ _last_row_map_json = ""
 
 
 def _write_row_map(rows: list[dict], scroll_offset: int) -> None:
+    """Write row-to-item mapping as JSON for the context menu shell script.
+
+    The tmux MouseDown3Pane binding triggers show-context-menu.sh which reads
+    this file to determine what was right-clicked (session/window/pane) and
+    builds the appropriate display-menu command. Skips the write if unchanged.
+    """
     global _last_row_map_json
     sidebar_pane = os.environ.get("TMUX_PANE", "")
     if not sidebar_pane:
@@ -126,6 +132,14 @@ def _write_row_map(rows: list[dict], scroll_offset: int) -> None:
 
 
 def _run_context_menu(mouse_y: int) -> None:
+    """Trigger the context menu script for the given screen row.
+
+    Fallback path for the m-key shortcut and BUTTON3 curses events.
+    The primary right-click path is the tmux MouseDown3Pane binding
+    registered by bind-context-menu.sh, which calls show-context-menu.sh
+    directly in the mouse event context (enabling -xM -yM positioning
+    and hold-release item selection).
+    """
     sidebar_pane = os.environ.get("TMUX_PANE", "")
     if not sidebar_pane:
         return
@@ -676,7 +690,7 @@ def process_keypress(
     key_char = chr(key) if 0 <= key <= 255 and chr(key).isprintable() else ""
     if key == ord("q"):
         return "", selected_pane_id, "close", False
-    if key == ord("m"):
+    if key == ord("m"):  # context menu on selected item
         return "", selected_pane_id, "context_menu", False
     shortcut_prefix = pending_key or (key_char and any(shortcut.startswith(key_char) for shortcut in shortcuts.values()))
     if key_char and shortcut_prefix:
@@ -753,7 +767,7 @@ def run_interactive(stdscr) -> None:
 
         if needs_render:
             render_screen(stdscr, rows, selected_pane_id, scroll_offset)
-            _write_row_map(rows, scroll_offset)
+            _write_row_map(rows, scroll_offset)  # update IPC file for context menu
             needs_render = False
 
         key = stdscr.getch()
@@ -783,7 +797,7 @@ def run_interactive(stdscr) -> None:
                 needs_render = True
                 continue
             if bstate & (curses.BUTTON3_PRESSED | curses.BUTTON3_CLICKED):
-                _run_context_menu(my)
+                _run_context_menu(my)  # fallback; primary path is tmux MouseDown3Pane
                 continue
             if bstate & (curses.BUTTON1_PRESSED | curses.BUTTON1_CLICKED):
                 row_idx = my + scroll_offset
@@ -861,7 +875,7 @@ def run_interactive(stdscr) -> None:
             if target["kind"] == "pane":
                 subprocess.run(["tmux", "select-pane", "-t", target["pane_id"]], check=False)
             next_refresh_at = 0.0
-        elif action == "context_menu":
+        elif action == "context_menu":  # m-key: open menu at selected item
             sel_idx = find_selected_row_index(rows, selected_pane_id)
             if sel_idx is not None:
                 _run_context_menu(max(0, sel_idx - scroll_offset))

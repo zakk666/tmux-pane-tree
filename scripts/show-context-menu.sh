@@ -19,7 +19,9 @@ menu_file="$state_dir/menu-cmd.tmux"
 
 [ -f "$rowmap_file" ] || exit 1
 
-# Single python3 call extracts all needed fields at once.
+# Look up the clicked row in the rowmap and extract all fields in one call.
+# The rowmap is written by sidebar-ui.py on every render with scroll_offset
+# so we can map screen y-coordinate back to the tree item.
 read -r kind session window pane_id < <(python3 -c "
 import json, sys
 data = json.load(open('$rowmap_file'))
@@ -34,8 +36,10 @@ else:
 
 scripts_dir="$(pwd)"
 
+# Escape single quotes for tmux command strings (POSIX: ' → '\'' )
 escape_tmux() { printf '%s' "$1" | sed "s/'/'\\\\''/g"; }
 
+# Empty area (clicked below last tree row)
 if [ "$kind" = "null" ]; then
     cat > "$menu_file" <<TMUX
 display-menu -xM -yM -T "#[align=centre] Sidebar " \
@@ -50,6 +54,9 @@ fi
 
 qs="$(escape_tmux "$session")"
 
+# Build context-specific display-menu command and write to menu_file.
+# The tmux binding source-files this in the mouse event context so that
+# -xM -yM positions the menu at the cursor and hold-release selection works.
 case "$kind" in
     session)
         cat > "$menu_file" <<TMUX
