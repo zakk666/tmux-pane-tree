@@ -79,6 +79,11 @@ fake_tmux_set_tree() {
   cat > "$TEST_TMUX_DATA_DIR/list_panes.txt"
 }
 
+fake_tmux_set_capture() {
+  local pane_id="$1"
+  cat > "$TEST_TMUX_DATA_DIR/capture_${pane_id//%/}.txt"
+}
+
 fake_tmux_add_sidebar_pane() {
   local pane_id="$1"
   local target_window_id="$2"
@@ -111,6 +116,7 @@ fake_tmux_no_sidebar() {
   printf '%%1\n' > "$TEST_TMUX_DATA_DIR/current_pane.txt"
   : > "$TEST_TMUX_DATA_DIR/commands.log"
   rm -f "$TEST_TMUX_DATA_DIR"/pane_*.meta
+  rm -f "$TEST_TMUX_DATA_DIR"/capture_*.txt
   rm -f "$TEST_TMUX_DATA_DIR"/option_*.txt
   rm -f "$TEST_TMUX_DATA_DIR"/window_layout_*.txt
   rm -f "$TEST_TMUX_DATA_DIR/next_sidebar_pane_id.txt"
@@ -311,6 +317,29 @@ case "$command_name" in
     else
       cat "$data_dir/list_panes.txt"
     fi
+    ;;
+  capture-pane)
+    target=""
+    while [ "$#" -gt 0 ]; do
+      case "$1" in
+        -pt)
+          target="$2"
+          shift 2
+          ;;
+        -p|-t)
+          shift
+          ;;
+        *)
+          if [ -z "$target" ]; then
+            target="$1"
+          fi
+          shift
+          ;;
+      esac
+    done
+    capture_file="$data_dir/capture_${target//%/}.txt"
+    [ -f "$capture_file" ] || exit 1
+    cat "$capture_file"
     ;;
   split-window)
     printf 'split-window %s\n' "$*" >> "$data_dir/commands.log"

@@ -55,6 +55,27 @@ json_get_number() {
   sed -n "s/.*\"$key\":\\([0-9][0-9]*\\).*/\\1/p" "$path"
 }
 
+clear_terminal_pane_state() {
+  local state_file="$1"
+  [ -f "$state_file" ] || return 1
+
+  local status state_dir tmp_file
+  status="$(json_get_string "$state_file" "status")"
+  case "$status" in
+    needs-input|done)
+      state_dir="$(dirname "$state_file")"
+      tmp_file="$(mktemp "$state_dir/.pane-state.XXXXXX")"
+      sed 's/"status":"[^"]*"/"status":"idle"/' "$state_file" > "$tmp_file"
+      mv "$tmp_file" "$state_file"
+      signal_sidebar_refresh
+      return 0
+      ;;
+    *)
+      return 1
+      ;;
+  esac
+}
+
 window_key_for_id() {
   local window_id="$1"
   printf '%s\n' "${window_id//@/w}"

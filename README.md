@@ -37,10 +37,10 @@ Unicode tree. Select any pane and jump to it with `Enter`.
 
 | Badge | Status      | Meaning                        |
 | :---: | ----------- | ------------------------------ |
-| `⏳` | running     | Agent is working               |
-| `󰍑` | needs-input | Waiting for permission / input |
-| `󰄬` | done        | Finished                       |
-| `󰚌` | error       | Something went wrong           |
+| `⏳`  | running     | Agent is working               |
+| `❓`  | needs-input | Waiting for permission / input |
+| `✅`  | done        | Finished                       |
+| `❌`  | error       | Something went wrong           |
 
 Badges for `done` and `needs-input` clear automatically when you focus the pane.
 
@@ -99,6 +99,7 @@ Then `tmux source-file ~/.tmux.conf`.
 | `aw`         | Add a window (prompts for name)  |
 | `as`         | Add a session (prompts for name) |
 | `x`          | Close the selected pane          |
+| `p`          | Toggle hide-panes mode           |
 | `q`          | Close the sidebar                |
 | `Ctrl+l`     | Return focus to the main pane    |
 
@@ -180,10 +181,25 @@ Override the default badge icons for agent status indicators:
 
 ```tmux
 set -g @tmux_sidebar_badge_running      "⏳"   # default: ⏳
-set -g @tmux_sidebar_badge_needs_input  "󰍑"   # default: 󰍑
-set -g @tmux_sidebar_badge_done         "󰄬"   # default: 󰄬
-set -g @tmux_sidebar_badge_error        "󰚌"   # default: 󰚌
+set -g @tmux_sidebar_badge_needs_input  "❓"   # default: ❓
+set -g @tmux_sidebar_badge_done         "✅"   # default: ✅
+set -g @tmux_sidebar_badge_error        "❌"   # default: ❌
 ```
+
+### Colors
+
+Override the colors used for each element type in the tree:
+
+```tmux
+set -g @tmux_sidebar_color_session "#1a2f4e"
+set -g @tmux_sidebar_color_window  "#4a5568"
+set -g @tmux_sidebar_color_pane    "#a0aec0"
+```
+
+Values are hex color codes. When not set, colors are derived from your tmux
+theme — session color falls back to `pane-active-border-style` foreground,
+window color to `pane-border-style` foreground, and pane color to
+`status-style` foreground.
 
 ### Key overrides
 
@@ -207,9 +223,12 @@ set -g @tmux_sidebar_focus_key   B    # default: T
 | `@tmux_sidebar_hide_panes`           |  `off`  | Show only sessions and windows   |
 | `@tmux_sidebar_scrolloff`            |   `8`   | Cursor scroll margin (like vim)  |
 | `@tmux_sidebar_badge_running`         |  `⏳`   | Badge for running status         |
-| `@tmux_sidebar_badge_needs_input`    |  `󰍑`   | Badge for needs-input status     |
-| `@tmux_sidebar_badge_done`           |  `󰄬`   | Badge for done status            |
-| `@tmux_sidebar_badge_error`          |  `󰚌`   | Badge for error status           |
+| `@tmux_sidebar_badge_needs_input`    |  `❓`   | Badge for needs-input status     |
+| `@tmux_sidebar_badge_done`           |  `✅`   | Badge for done status            |
+| `@tmux_sidebar_badge_error`          |  `❌`   | Badge for error status           |
+| `@tmux_sidebar_color_session`        |    —    | Session name color (hex)         |
+| `@tmux_sidebar_color_window`         |    —    | Window name color (hex)          |
+| `@tmux_sidebar_color_pane`           |    —    | Pane name color (hex)            |
 | `@tmux_sidebar_toggle_key`           |   `t`   | Tmux key to toggle sidebar       |
 | `@tmux_sidebar_focus_key`            |   `T`   | Tmux key to focus sidebar        |
 
@@ -252,6 +271,28 @@ richer event parsing if you need finer-grained status mapping.
 - bash 4.0+
 
 ## Development
+
+### Internal layout
+
+The runtime entrypoints stay small and most shared logic now lives in focused
+helpers:
+
+```text
+scripts/
+  sidebar-ui.py            <- compatibility entrypoint and interactive loop
+  sidebar_ui_lib/
+    core.py                <- tmux/config helpers, prompts, pane actions
+    status.py              <- live agent detection, badge selection
+    tree.py                <- tree loading, selection, search helpers
+    render.py              <- curses colors, drawing, row-map/context-menu IPC
+  hook-claude.sh           <- Claude hook wrapper
+  hook-codex.sh            <- Codex hook wrapper
+  hook-lib.sh              <- shared shell hook input handling
+  hook-parser.py           <- shared Claude/Codex event parsing
+```
+
+`sidebar-ui.py` remains the import surface used by the tests, while the
+implementation details live under `scripts/sidebar_ui_lib/`.
 
 ### Tests
 

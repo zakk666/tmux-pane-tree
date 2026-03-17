@@ -8,12 +8,20 @@ A tmux plugin that adds an interactive sidebar showing sessions, windows, and pa
 sidebar.tmux          <- TPM entry point, registers hooks and keybindings
 scripts/
   lib.sh              <- shared bash utilities (state, tmux helpers, json)
-  sidebar-ui.py       <- interactive curses UI (tree render, input, agent detection)
+  sidebar-ui.py       <- compatibility entrypoint and interactive curses loop
+  sidebar_ui_lib/
+    core.py           <- tmux/config helpers, prompts, pane actions
+    status.py         <- live agent detection and badge selection
+    tree.py           <- tree loading, selection, search helpers
+    render.py         <- curses colors, drawing, row-map/context-menu IPC
   toggle-sidebar.sh   <- main user-facing toggle (<prefix>t)
   ensure-sidebar-pane.sh  <- creates/maintains sidebar pane per window
   close-sidebar.sh    <- tears down all sidebar panes, restores layouts
   apply-key-overrides.sh  <- rebinds toggle/focus keys from user options
   update-pane-state.sh    <- agent hook entry point, writes pane JSON state
+  hook-claude.sh / hook-codex.sh  <- thin hook wrappers
+  hook-lib.sh         <- shared shell hook input handling
+  hook-parser.py      <- shared Claude/Codex event parsing
   refresh-sidebar.sh  <- triggers sidebar re-render
   remember-main-pane.sh   <- tracks last active non-sidebar pane
   clear-pane-state.sh     <- clears agent badge on pane focus
@@ -139,6 +147,6 @@ tmux source-file sidebar.tmux   # won't work — uses #{d:current_file}
 
 - No fallback logic unless explicitly requested
 - Fail fast — `set -euo pipefail` in bash, no silent error swallowing
-- Separation of concerns: lib.sh for shared logic, individual scripts for single responsibilities, sidebar-ui.py for all UI
+- Separation of concerns: lib.sh for shared bash logic, hook-lib.sh/hook-parser.py for shared hook parsing, sidebar-ui.py as the UI entrypoint, and sidebar_ui_lib/ for focused Python UI modules
 - Atomic state mutations — write to temp file then `mv` to avoid partial reads
 - Mutex via `tmux wait-for` for operations that race (e.g. ensure-sidebar-pane)

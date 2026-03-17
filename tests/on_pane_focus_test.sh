@@ -49,6 +49,18 @@ bash scripts/on-pane-focus.sh "%1" "@1"
 assert_file_contains "$TMUX_SIDEBAR_STATE_DIR/pane-%1.json" '"status":"running"'
 
 fake_tmux_no_sidebar
+fake_tmux_register_pane "%6" "work" "@1" "editor" "codex --full-auto" "codex-aarch64-apple-darwin"
+printf '1\n' > "$TEST_TMUX_DATA_DIR/option__tmux_sidebar_enabled.txt"
+
+cat > "$TMUX_SIDEBAR_STATE_DIR/pane-%6.json" <<'EOF'
+{"pane_id":"%6","app":"codex","status":"done","updated_at":100}
+EOF
+
+bash scripts/on-pane-focus.sh "%6" "@1"
+
+assert_file_contains "$TMUX_SIDEBAR_STATE_DIR/pane-%6.json" '"status":"idle"'
+
+fake_tmux_no_sidebar
 fake_tmux_register_pane "%90" "work" "@1" "editor" "Sidebar" "python3"
 fake_tmux_add_sidebar_pane "%90" "@1"
 printf '%%90\n' > "$TEST_TMUX_DATA_DIR/current_pane.txt"

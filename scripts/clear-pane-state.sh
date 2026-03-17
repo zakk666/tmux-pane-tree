@@ -11,13 +11,4 @@ state_dir="$(print_state_dir)"
 state_file="$state_dir/pane-$pane_id.json"
 [ -f "$state_file" ] || exit 0
 
-app="$(json_get_string "$state_file" "app")"
-status="$(json_get_string "$state_file" "status")"
-case "$app:$status" in
-  *:needs-input|*:done)
-    tmp_file="$(mktemp "$state_dir/.pane-state.XXXXXX")"
-    sed 's/"status":"[^"]*"/"status":"idle"/' "$state_file" > "$tmp_file"
-    mv "$tmp_file" "$state_file"
-    signal_sidebar_refresh
-    ;;
-esac
+clear_terminal_pane_state "$state_file" || true
