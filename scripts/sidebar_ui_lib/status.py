@@ -169,8 +169,17 @@ def pane_display_label(command: str, title: str, state: dict | None) -> str:
     return command
 
 
+def auto_window_name(window_name: str, panes: list[dict]) -> bool:
+    if looks_like_semver(window_name) or looks_like_codex(window_name) or looks_like_claude(window_name):
+        return True
+    active_pane = next((pane for pane in panes if pane["active"]), panes[0] if panes else None)
+    if active_pane is None:
+        return False
+    return normalize_token(window_name) == normalize_token(active_pane["label"])
+
+
 def window_display_name(window_name: str, panes: list[dict], pane_states: dict[str, dict]) -> str:
-    if not looks_like_semver(window_name):
+    if not auto_window_name(window_name, panes):
         return window_name
 
     for pane in sorted(panes, key=lambda p: not p["active"]):

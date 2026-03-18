@@ -59,6 +59,28 @@ case "$output" in
 esac
 
 fake_tmux_set_tree <<'EOF'
+work|@1|codex-aarch64-apple-darwin|%33|codex-aarch64-apple-darwin|codex --full-auto|1
+EOF
+rm -f "$TMUX_SIDEBAR_STATE_DIR"/pane-*.json
+
+output="$(python3 scripts/sidebar-ui.py --dump-render 2>&1)"
+
+window_line="$(printf '%s\n' "$output" | grep -E '^\s+[├└]─' | sed -n '2p')"
+assert_contains "$window_line" 'codex'
+assert_not_contains "$window_line" 'codex-aarch64-apple-darwin'
+
+fake_tmux_set_tree <<'EOF'
+work|@1|env|%34|env|codex --full-auto|1
+EOF
+rm -f "$TMUX_SIDEBAR_STATE_DIR"/pane-*.json
+
+output="$(python3 scripts/sidebar-ui.py --dump-render 2>&1)"
+
+window_line="$(printf '%s\n' "$output" | grep -E '^\s+[├└]─' | sed -n '2p')"
+assert_contains "$window_line" 'codex'
+assert_not_contains "$window_line" 'env'
+
+fake_tmux_set_tree <<'EOF'
 work|@1|editor|%4|2.1.76|2.1.76|1
 work|@1|editor|%5|2.1.76|2.1.76|0
 EOF
