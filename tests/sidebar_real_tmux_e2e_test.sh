@@ -33,7 +33,7 @@ selected_title="$(real_tmux display-message -p -t "$sidebar_pane_id" '#{pane_tit
 assert_eq "$selected_title" 'Sidebar'
 
 build_window_id="$(real_tmux new-window -P -F '#{window_id}' -t work -n build)"
-build_main_pane_id="$(real_tmux display-message -p -t "$build_window_id" '#{pane_id}')"
+build_main_pane_id="$(real_tmux list-panes -t "$build_window_id" -F '#{pane_id}' | sed -n '1p')"
 real_tmux run-shell "$REPO_ROOT/scripts/features/sidebar/ensure-sidebar-pane.sh $build_main_pane_id $build_window_id"
 build_sidebar_pane_id="$(real_tmux_wait_for_sidebar_pane "$build_window_id")"
 build_capture="$(real_tmux_wait_for_capture "$build_sidebar_pane_id" 'build')"
