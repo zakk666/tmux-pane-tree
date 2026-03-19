@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+if [ "${TMUX_SIDEBAR_TRACE:-0}" = "1" ]; then
+  export PS4='+ensure:${LINENO}: '
+  set -x
+fi
+
 enabled="$(tmux show-options -gv @tmux_sidebar_enabled 2>/dev/null || printf '0\n')"
 [ "$enabled" = "1" ] || exit 0
 
