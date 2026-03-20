@@ -21,12 +21,21 @@ from pathlib import Path
 
 path = Path.home() / ".config/tmux/tmux.conf"
 old_line = 'if-shell "test -f ~/.config/tmux/plugins/tmux-sidebar/sidebar.tmux" "source-file ~/.config/tmux/plugins/tmux-sidebar/sidebar.tmux"'
-line = "source-file ~/.config/tmux/plugins/tmux-sidebar/sidebar.tmux"
+tilde_line = "source-file ~/.config/tmux/plugins/tmux-sidebar/sidebar.tmux"
+line = f"source-file {Path.home() / '.config/tmux/plugins/tmux-sidebar/sidebar.tmux'}"
+old_run_shell_tilde = "run-shell '~/.config/tmux/plugins/tmux-sidebar/sidebar.tmux'"
+old_run_shell_line = f"run-shell '{Path.home() / '.config/tmux/plugins/tmux-sidebar/sidebar.tmux'}'"
 text = path.read_text()
 text = text.replace(old_line + "\n", "")
 text = text.replace("\n" + old_line, "")
+text = text.replace(tilde_line + "\n", "")
+text = text.replace("\n" + tilde_line, "")
 text = text.replace(line + "\n", "")
 text = text.replace("\n" + line, "")
+text = text.replace(old_run_shell_tilde + "\n", "")
+text = text.replace("\n" + old_run_shell_tilde, "")
+text = text.replace(old_run_shell_line + "\n", "")
+text = text.replace("\n" + old_run_shell_line, "")
 tpm_line = "run '~/.config/tmux/plugins/tpm/tpm'"
 if tpm_line in text:
     text = text.replace(tpm_line, f"{tpm_line}\n{line}", 1)
@@ -104,6 +113,18 @@ if [ -n "${TMUX:-}" ]; then
     | while IFS= read -r hook_name; do
         [ -n "$hook_name" ] || continue
         tmux set-hook -gu "$hook_name" || true
+      done
+  tmux show-hooks -gw 2>/dev/null \
+    | awk '/tmux-sidebar/ {print $1}' \
+    | while IFS= read -r hook_name; do
+        [ -n "$hook_name" ] || continue
+        tmux set-hook -guw "$hook_name" || true
+      done
+  tmux show-hooks -gp 2>/dev/null \
+    | awk '/tmux-sidebar/ {print $1}' \
+    | while IFS= read -r hook_name; do
+        [ -n "$hook_name" ] || continue
+        tmux set-hook -gup "$hook_name" || true
       done
   tmux source-file "$TMUX_CONF" || true
   bash "$PLUGIN_DST/scripts/features/sidebar/reload-sidebar-panes.sh" || true

@@ -606,6 +606,121 @@ PY
   bind-key)
     printf 'bind-key %s\n' "$*" >> "$data_dir/commands.log"
     ;;
+  source-file)
+    printf 'source-file %s\n' "$*" >> "$data_dir/commands.log"
+    ;;
+  show-hooks)
+    scope="local"
+    while [ "$#" -gt 0 ]; do
+      case "$1" in
+        -g)
+          scope="g"
+          shift
+          ;;
+        -gw|-wg)
+          scope="gw"
+          shift
+          ;;
+        -gp|-pg)
+          scope="gp"
+          shift
+          ;;
+        *)
+          shift
+          ;;
+      esac
+    done
+    found="0"
+    for hook_file in "$data_dir"/hook_"$scope"_*.txt; do
+      [ -e "$hook_file" ] || continue
+      IFS='|' read -r hook_name hook_command < "$hook_file"
+      if [ -n "${hook_command:-}" ]; then
+        printf '%s %s\n' "$hook_name" "$hook_command"
+      else
+        printf '%s\n' "$hook_name"
+      fi
+      found="1"
+    done
+    [ "$found" = "1" ] || true
+    ;;
+  set-hook)
+    printf 'set-hook %s\n' "$*" >> "$data_dir/commands.log"
+    scope="local"
+    unset_flag="0"
+    hook_name=""
+    hook_command=""
+    while [ "$#" -gt 0 ]; do
+      case "$1" in
+        -g)
+          scope="g"
+          shift
+          ;;
+        -w)
+          if [ "$scope" = "g" ]; then
+            scope="gw"
+          else
+            scope="w"
+          fi
+          shift
+          ;;
+        -p)
+          if [ "$scope" = "g" ]; then
+            scope="gp"
+          else
+            scope="p"
+          fi
+          shift
+          ;;
+        -u)
+          unset_flag="1"
+          shift
+          ;;
+        -*)
+          flag_chars="${1#-}"
+          case "$flag_chars" in
+            *g*) scope="g" ;;
+          esac
+          case "$flag_chars" in
+            *w*)
+              if [ "$scope" = "g" ]; then
+                scope="gw"
+              else
+                scope="w"
+              fi
+              ;;
+          esac
+          case "$flag_chars" in
+            *p*)
+              if [ "$scope" = "g" ]; then
+                scope="gp"
+              else
+                scope="p"
+              fi
+              ;;
+          esac
+          case "$flag_chars" in
+            *u*) unset_flag="1" ;;
+          esac
+          shift
+          ;;
+        *)
+          if [ -z "$hook_name" ]; then
+            hook_name="$1"
+          elif [ -z "$hook_command" ]; then
+            hook_command="$1"
+          fi
+          shift
+          ;;
+      esac
+    done
+    encoded_hook_name="$(printf '%s' "$hook_name" | tr -c '[:alnum:]._-' '_')"
+    hook_file="$data_dir/hook_${scope}_${encoded_hook_name}.txt"
+    if [ "$unset_flag" = "1" ]; then
+      rm -f "$hook_file"
+    else
+      printf '%s|%s\n' "$hook_name" "$hook_command" > "$hook_file"
+    fi
+    ;;
   unbind-key)
     printf 'unbind-key %s\n' "$*" >> "$data_dir/commands.log"
     ;;
