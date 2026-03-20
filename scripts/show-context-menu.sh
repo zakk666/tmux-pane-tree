@@ -7,15 +7,11 @@ set -euo pipefail
 # The calling tmux binding then source-files this to open the menu
 # in the mouse event context (so -xM -yM and hold-release work).
 
-SCRIPT_DIR="$(CDPATH= cd -- "$(dirname "$0")" && pwd)"
-SCRIPTS_DIR="$(CDPATH= cd -- "$SCRIPT_DIR/../.." && pwd)"
-. "$SCRIPTS_DIR/core/lib.sh"
+CDPATH= cd -- "$(dirname "$0")" || exit 1
+. ./lib.sh
 
 sidebar_pane="${1:?sidebar pane id required}"
 mouse_y="${2:-0}"
-menu_x="${3:-M}"
-menu_y="${4:-M}"
-target_client="${5:-}"
 
 state_dir="$(print_state_dir)"
 rowmap_file="$state_dir/rowmap-${sidebar_pane}.json"
@@ -42,27 +38,20 @@ else:
 ")
 fi
 
-sidebar_scripts_dir="$SCRIPTS_DIR/features/sidebar"
+scripts_dir="$(pwd)"
 
 # Escape single quotes for tmux command strings (POSIX: ' → '\'' )
 escape_tmux() { printf '%s' "$1" | sed "s/'/'\\\\''/g"; }
 
-# Keyboard-triggered menus need an explicit target client; mouse bindings
-# already run in client context so they can omit this.
-client_args=""
-if [ -n "$target_client" ]; then
-    client_args="-c $target_client"
-fi
-
 # Empty area (clicked below last tree row)
 if [ "$kind" = "null" ]; then
     cat > "$menu_file" <<TMUX
-display-menu $client_args -x $menu_x -y $menu_y -T "#[align=centre] Sidebar " \
+display-menu -xM -yM -T "#[align=centre] Sidebar " \
   "New Session" "s" "command-prompt -p 'session name:' \"new-session -d -s '%%' \\\\; switch-client -t '%%'\"" \
   "New Window"  "w" "new-window" \
   "" "" "" \
-  "Refresh"       "r" "run-shell -b 'bash $sidebar_scripts_dir/refresh-sidebar.sh'" \
-  "Close Sidebar" "q" "run-shell -b 'bash $sidebar_scripts_dir/close-sidebar.sh'"
+  "Refresh"       "r" "run-shell -b 'bash $scripts_dir/refresh-sidebar.sh'" \
+  "Close Sidebar" "q" "run-shell -b 'bash $scripts_dir/close-sidebar.sh'"
 TMUX
     exit 0
 fi
@@ -75,7 +64,7 @@ qs="$(escape_tmux "$session")"
 case "$kind" in
     session)
         cat > "$menu_file" <<TMUX
-display-menu $client_args -x $menu_x -y $menu_y -T "#[align=centre] $(escape_tmux "$session") " \
+display-menu -xM -yM -T "#[align=centre] $(escape_tmux "$session") " \
   "Switch to"    "s" "switch-client -t '$qs'" \
   "Rename"       "r" "command-prompt -I '$qs' -p 'Rename session:' \"rename-session -t '$qs' '%%'\"" \
   "New Window"   "w" "new-window -t '$qs'" \
@@ -87,7 +76,7 @@ TMUX
     window)
         qw="$(escape_tmux "$window")"
         cat > "$menu_file" <<TMUX
-display-menu $client_args -x $menu_x -y $menu_y -T "#[align=centre] $(escape_tmux "$session"):$(escape_tmux "$window") " \
+display-menu -xM -yM -T "#[align=centre] $(escape_tmux "$session"):$(escape_tmux "$window") " \
   "Select"            "s" "switch-client -t '$qs' \\; select-window -t '$qw'" \
   "Rename"            "r" "command-prompt -I '' -p 'Rename window:' \"rename-window -t '$qw' '%%'\"" \
   "New Window After"  "w" "new-window -a -t '$qw'" \
@@ -102,7 +91,7 @@ TMUX
         qw="$(escape_tmux "$window")"
         qp="$(escape_tmux "$pane_id")"
         cat > "$menu_file" <<TMUX
-display-menu $client_args -x $menu_x -y $menu_y -T "#[align=centre] $(escape_tmux "$pane_id") " \
+display-menu -xM -yM -T "#[align=centre] $(escape_tmux "$pane_id") " \
   "Select"            "s" "switch-client -t '$qs' \\; select-window -t '$qw' \\; select-pane -t '$qp'" \
   "Zoom"              "z" "resize-pane -Z -t '$qp'" \
   "" "" "" \

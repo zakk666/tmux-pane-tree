@@ -22,4 +22,5 @@ assert_file_contains "sidebar.tmux" 'handle-pane-exited.sh'
 assert_file_contains "sidebar.tmux" 'configure-pane-border-format.sh'
 assert_file_contains "sidebar.tmux" 'client-attached[199]" "run-shell -b'
 assert_file_contains "sidebar.tmux" 'client-active[198]" "run-shell -b'
+# after-new-window must call ensure-sidebar-pane (not notify-sidebar)
 assert_not_contains "$(grep 'after-new-window' sidebar.tmux)" 'notify-sidebar'

@@ -4,6 +4,7 @@ import curses
 import json
 import os
 import re
+import shlex
 import subprocess
 from pathlib import Path
 
@@ -55,8 +56,54 @@ def _run_context_menu(mouse_y: int) -> None:
     sidebar_pane = os.environ.get("TMUX_PANE", "")
     if not sidebar_pane:
         return
-    subprocess.Popen(
-        ["bash", str(_scripts_dir() / "features/context-menu/show-context-menu.sh"), sidebar_pane, str(mouse_y)],
+    menu_file = STATE_DIR / "menu-cmd.tmux"
+    try:
+        pane_metrics = subprocess.check_output(
+            ["tmux", "display-message", "-p", "-t", sidebar_pane, "#{pane_left}|#{pane_top}|#{pane_width}|#{session_name}"],
+            text=True,
+            stderr=subprocess.DEVNULL,
+        ).strip()
+        pane_left_raw, pane_top_raw, pane_width_raw, session_name = pane_metrics.split("|", 3)
+        menu_x = str(int(pane_left_raw) + max(0, int(pane_width_raw) - 1))
+        menu_y = str(int(pane_top_raw) + max(0, mouse_y))
+        target_client = subprocess.check_output(
+            ["tmux", "list-clients", "-t", session_name, "-F", "#{client_name}"],
+            text=True,
+            stderr=subprocess.DEVNULL,
+        ).splitlines()[0].strip()
+        if not target_client:
+            return
+    except (subprocess.CalledProcessError, ValueError):
+        return
+    try:
+        menu_file.unlink(missing_ok=True)
+    except OSError:
+        pass
+    subprocess.run(
+        [
+            "bash",
+            str(_scripts_dir() / "features/context-menu/show-context-menu.sh"),
+            sidebar_pane,
+            str(mouse_y),
+            menu_x,
+            menu_y,
+            target_client,
+        ],
+        check=False,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+    if not menu_file.exists():
+        return
+    try:
+        menu_command = shlex.split(menu_file.read_text().strip())
+    except (OSError, ValueError):
+        return
+    if not menu_command:
+        return
+    subprocess.run(
+        ["tmux", *menu_command],
+        check=False,
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
     )

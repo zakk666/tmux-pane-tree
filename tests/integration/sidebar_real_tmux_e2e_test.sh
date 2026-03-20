@@ -47,3 +47,33 @@ build_capture="$(real_tmux_wait_for_capture "$build_sidebar_pane_id" 'build')"
 assert_contains "$build_capture" 'work'
 assert_contains "$build_capture" 'build'
 assert_contains "$build_capture" 'ops'
+
+real_tmux select-pane -t "$sidebar_pane_id"
+client_log="$TEST_TMP/client.log"
+real_tmux_attach_control_client_info work "$client_log"
+client_pid="$REAL_TMUX_CLIENT_PID"
+client_name="$REAL_TMUX_CLIENT_NAME"
+attached_client_name="$(real_tmux_wait_for_client_name)"
+assert_eq "$attached_client_name" "$client_name"
+menu_file="$REAL_TMUX_STATE_DIR/menu-cmd.tmux"
+rm -f "$menu_file"
+TMUX_SIDEBAR_STATE_DIR="$REAL_TMUX_STATE_DIR" \
+  bash "$REPO_ROOT/scripts/features/context-menu/show-context-menu.sh" \
+    "$sidebar_pane_id" 0 10 0 "$client_name"
+menu_command=""
+for _attempt in $(seq 1 100); do
+  if [ -f "$menu_file" ]; then
+    menu_command="$(<"$menu_file")"
+    break
+  fi
+  sleep 0.05
+done
+[ -n "$menu_command" ] || fail "expected menu command in [$menu_file]"
+assert_contains "$menu_command" "display-menu -c $client_name"
+
+sidebar_after_menu="$(
+  real_tmux list-panes -t "$main_window_id" -F '#{pane_id}|#{pane_title}' \
+    | awk -F'|' '$2 == "Sidebar" { print $1; exit }'
+)"
+assert_eq "$sidebar_after_menu" "$sidebar_pane_id"
+kill "$client_pid" 2>/dev/null || true
