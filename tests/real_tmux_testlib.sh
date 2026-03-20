@@ -61,6 +61,8 @@ import signal
 import subprocess
 import sys
 import time
+import fcntl
+import termios
 from pathlib import Path
 
 socket_path, session_name, log_file, info_file = sys.argv[1:5]
@@ -68,6 +70,22 @@ socket_path, session_name, log_file, info_file = sys.argv[1:5]
 stop = False
 child: subprocess.Popen[bytes] | None = None
 master_fd = -1
+
+
+def make_controlling_tty(slave_fd: int) -> None:
+    os.setsid()
+    try:
+        os.login_tty(slave_fd)
+        return
+    except AttributeError:
+        pass
+
+    fcntl.ioctl(slave_fd, termios.TIOCSCTTY, 0)
+    os.dup2(slave_fd, 0)
+    os.dup2(slave_fd, 1)
+    os.dup2(slave_fd, 2)
+    if slave_fd > 2:
+        os.close(slave_fd)
 
 
 def handle_signal(signum: int, frame: object) -> None:
@@ -90,7 +108,7 @@ with open(log_file, "ab", buffering=0) as log_handle:
         stdin=slave_fd,
         stdout=slave_fd,
         stderr=slave_fd,
-        start_new_session=True,
+        preexec_fn=lambda: make_controlling_tty(slave_fd),
         close_fds=True,
     )
     os.close(slave_fd)
