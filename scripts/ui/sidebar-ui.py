@@ -33,6 +33,7 @@ from sidebar_ui_lib.core import (
     focus_main_pane,
     prompt_add_session,
     prompt_add_window,
+    prompt_rename_session,
     sidebar_has_focus,
     tmux_option,
     toggle_hide_panes,
@@ -391,6 +392,9 @@ def run_interactive(stdscr) -> None:
             next_refresh_at = 0.0
         elif action == "add_session" and target is not None:
             prompt_add_session(target["pane_id"])
+            next_refresh_at = 0.0
+        elif action == "rename_session" and target is not None:
+            prompt_rename_session(target["pane_id"])
             next_refresh_at = 0.0
         elif action == "close_pane" and target is not None:
             cur_idx = next((i for i, row in enumerate(pane_rows) if row["pane_id"] == target["pane_id"]), 0)

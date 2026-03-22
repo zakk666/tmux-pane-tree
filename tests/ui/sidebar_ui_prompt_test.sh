@@ -16,9 +16,12 @@ spec.loader.exec_module(module)
 
 module.prompt_add_window("%1")
 module.prompt_add_session("%1")
+module.prompt_rename_session("%1")
 PY
 
 assert_file_contains "$TEST_TMUX_DATA_DIR/commands.log" 'command-prompt -p window name:'
 assert_file_contains "$TEST_TMUX_DATA_DIR/commands.log" 'add-window.sh --session work --window-index 4 --name "%%%"'
 assert_file_contains "$TEST_TMUX_DATA_DIR/commands.log" 'command-prompt -p session name:'
 assert_file_contains "$TEST_TMUX_DATA_DIR/commands.log" 'add-session.sh --after-session work --name "%%%"'
+assert_file_contains "$TEST_TMUX_DATA_DIR/commands.log" 'command-prompt -I work -p rename session:'
+assert_file_contains "$TEST_TMUX_DATA_DIR/commands.log" 'rename-session.sh --session work --name "%%%"'

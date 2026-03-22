@@ -597,6 +597,57 @@ PY
   kill-session)
     printf 'kill-session %s\n' "$*" >> "$data_dir/commands.log"
     ;;
+  rename-session)
+    printf 'rename-session %s\n' "$*" >> "$data_dir/commands.log"
+    target=""
+    new_name=""
+    while [ "$#" -gt 0 ]; do
+      case "$1" in
+        -t)
+          target="$2"
+          shift 2
+          ;;
+        *)
+          new_name="$1"
+          shift
+          ;;
+      esac
+    done
+    [ -n "$target" ] || exit 1
+    [ -n "$new_name" ] || exit 1
+    for meta_file in "$data_dir"/pane_*.meta; do
+      [ -e "$meta_file" ] || continue
+      python3 - "$meta_file" "$target" "$new_name" <<'PY'
+from pathlib import Path
+import sys
+
+path = Path(sys.argv[1])
+target = sys.argv[2]
+new_name = sys.argv[3]
+updated = []
+for line in path.read_text().splitlines():
+    if line == f"session_name='{target}'":
+        updated.append(f"session_name='{new_name}'")
+    elif line == f"session_name={target}":
+        updated.append(f"session_name={new_name}")
+    else:
+        updated.append(line)
+path.write_text("\n".join(updated) + "\n")
+PY
+    done
+    if [ -f "$data_dir/list_panes.txt" ]; then
+      awk -F'|' -v target="$target" -v new_name="$new_name" '
+        BEGIN { OFS = FS }
+        {
+          if ($1 == target) {
+            $1 = new_name
+          }
+          print
+        }
+      ' "$data_dir/list_panes.txt" > "$data_dir/list_panes.txt.next"
+      mv "$data_dir/list_panes.txt.next" "$data_dir/list_panes.txt"
+    fi
+    ;;
   new-window)
     printf 'new-window %s\n' "$*" >> "$data_dir/commands.log"
     ;;

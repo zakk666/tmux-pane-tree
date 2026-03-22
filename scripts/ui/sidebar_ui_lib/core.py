@@ -16,6 +16,7 @@ DEFAULT_SIDEBAR_WIDTH = 25
 DEFAULT_SHORTCUTS = {
     "add_window": "aw",
     "add_session": "as",
+    "rename_session": "rs",
     "close_pane": "x",
 }
 SIDEBAR_TITLES = {"Sidebar", "tmux-sidebar"}
@@ -144,22 +145,22 @@ def close_sidebar() -> None:
     subprocess.run(["tmux", "run-shell", "-b", shell_command], check=False)
 
 
-def prompt_for_name(prompt: str, script_name: str, arguments: list[str]) -> None:
+def prompt_for_name(prompt: str, script_name: str, arguments: list[str], initial_value: str = "") -> None:
     script_path = scripts_dir() / script_name
     shell_parts = ["bash", shlex.quote(str(script_path))]
     shell_parts.extend(shlex.quote(argument) for argument in arguments)
     shell_parts.extend(["--name", '"%%%"'])
-    shell_command = " ".join(shell_parts)
-    subprocess.run(
+    command = ["tmux", "command-prompt"]
+    if initial_value:
+        command.extend(["-I", initial_value])
+    command.extend(
         [
-            "tmux",
-            "command-prompt",
             "-p",
             prompt,
-            f"run-shell -b {shlex.quote(shell_command)}",
-        ],
-        check=False,
+            f"run-shell -b {shlex.quote(' '.join(shell_parts))}",
+        ]
     )
+    subprocess.run(command, check=False)
 
 
 def prompt_add_window(pane_id: str) -> None:
@@ -187,3 +188,18 @@ def prompt_add_session(pane_id: str) -> None:
     if not session_name:
         return
     prompt_for_name("session name:", "features/sessions/add-session.sh", ["--after-session", session_name])
+
+
+def prompt_rename_session(pane_id: str) -> None:
+    try:
+        session_name = run_tmux("display-message", "-p", "-t", pane_id, "#{session_name}").strip()
+    except subprocess.CalledProcessError:
+        return
+    if not session_name:
+        return
+    prompt_for_name(
+        "rename session:",
+        "features/sessions/rename-session.sh",
+        ["--session", session_name],
+        initial_value=session_name,
+    )
