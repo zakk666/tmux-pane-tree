@@ -16,6 +16,8 @@ DEFAULT_SIDEBAR_WIDTH = 25
 DEFAULT_SHORTCUTS = {
     "add_window": "aw",
     "add_session": "as",
+    "go_top": "gg",
+    "go_bottom": "G",
     "rename_session": "rs",
     "rename_window": "rw",
     "close_pane": "x",

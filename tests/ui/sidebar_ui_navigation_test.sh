@@ -90,6 +90,98 @@ assert_contains "$output" '"close_calls": 1'
 assert_contains "$output" '"load_calls": 1'
 assert_contains "$output" '▶ pane two'
 
+output="$(python3 - <<'PY'
+import importlib.util
+import json
+from pathlib import Path
+
+spec = importlib.util.spec_from_file_location("sidebar_ui", Path("scripts/ui/sidebar-ui.py"))
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+
+module.curses.curs_set = lambda _: None
+module.curses.mousemask = lambda _: (0, 0)
+module.curses.COLS = 40
+module.curses.LINES = 10
+
+closed = {"count": 0}
+
+
+def fake_load_tree():
+    return [
+        {"kind": "session", "text": "work"},
+        {"kind": "window", "text": "editor"},
+        {"kind": "pane", "pane_id": "%1", "text": "pane one"},
+        {"kind": "pane", "pane_id": "%2", "text": "pane two"},
+        {"kind": "pane", "pane_id": "%3", "text": "pane three"},
+    ]
+
+
+module.load_tree = fake_load_tree
+module.configured_shortcuts = lambda: dict(module.DEFAULT_SHORTCUTS)
+module.sidebar_has_focus = lambda: True
+module.tmux_option = lambda _: ""
+module.close_sidebar = lambda: closed.__setitem__("count", closed["count"] + 1)
+module.prompt_add_window = lambda pane_id: None
+module.prompt_add_session = lambda pane_id: None
+module.focus_main_pane = lambda: None
+
+
+class FakeScreen:
+    def __init__(self, keys):
+        self.keys = list(keys)
+        self.lines = {}
+        self.frames = []
+
+    def keypad(self, enabled):
+        pass
+
+    def timeout(self, milliseconds):
+        pass
+
+    def erase(self):
+        self.lines = {}
+
+    def addnstr(self, y, x, text, limit, attr=0):
+        self.lines[y] = text[:limit]
+
+    def refresh(self):
+        frame = [self.lines[index] for index in sorted(self.lines)]
+        self.frames.append(frame)
+
+    def getch(self):
+        if not self.keys:
+            raise AssertionError("getch called after key sequence ended")
+        return self.keys.pop(0)
+
+
+screen = FakeScreen([ord("G"), ord("g"), ord("g"), ord("q")])
+module.run_interactive(screen)
+
+bottom_selected = any(
+    any("▶ pane three" in line for line in frame)
+    for frame in screen.frames
+)
+top_selected_after_gg = any("▶ pane one" in line for line in screen.frames[-1])
+
+print(
+    json.dumps(
+        {
+            "bottom_selected": bottom_selected,
+            "close_calls": closed["count"],
+            "top_selected_after_gg": top_selected_after_gg,
+        },
+        ensure_ascii=False,
+        sort_keys=True,
+    )
+)
+PY
+)"
+
+assert_contains "$output" '"bottom_selected": true'
+assert_contains "$output" '"close_calls": 1'
+assert_contains "$output" '"top_selected_after_gg": true'
+
 fake_tmux_no_sidebar
 fake_tmux_register_pane "%1" "work" "@1" "editor" "pane one"
 fake_tmux_register_pane "%2" "work" "@1" "editor" "pane two"

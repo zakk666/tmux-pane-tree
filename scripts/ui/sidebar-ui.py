@@ -156,6 +156,12 @@ def process_keypress(
     shortcut_prefix = pending_key or (key_char and any(shortcut.startswith(key_char) for shortcut in shortcuts.values()))
     if key_char and shortcut_prefix:
         pending_key, action = advance_shortcut_state(pending_key, key_char, shortcuts)
+        if action == "go_top" and pane_rows:
+            next_selected = pane_rows[0]["pane_id"]
+            return pending_key, next_selected, None, next_selected != selected_pane_id
+        if action == "go_bottom" and pane_rows:
+            next_selected = pane_rows[-1]["pane_id"]
+            return pending_key, next_selected, None, next_selected != selected_pane_id
         return pending_key, selected_pane_id, action, False
 
     pending_key = ""
