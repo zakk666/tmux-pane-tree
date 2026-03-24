@@ -202,6 +202,15 @@ def jump_list_target(jump_list: list[str], jump_index: int, direction: int) -> t
     return jump_list[next_index], next_index
 
 
+def resolve_jump_action(
+    action: str, jump_list: list[str], jump_index: int
+) -> tuple[str | None, int, bool]:
+    direction = -1 if action == "jump_back" else 1
+    next_selected, next_index = jump_list_target(jump_list, jump_index, direction)
+    focus_main = action == "jump_back" and next_selected is not None and next_index == 0
+    return next_selected, next_index, focus_main
+
+
 def process_keypress(
     key: int,
     selected_pane_id: str,
@@ -306,10 +315,13 @@ def run_interactive(stdscr) -> None:
             else:
                 jump_list, jump_index = seed_jump_list(jump_list, jump_index, selected_pane_id)
                 for sidebar_action in sidebar_actions:
-                    if sidebar_action == "jump_back":
-                        next_selected, jump_index = jump_list_target(jump_list, jump_index, -1)
-                    else:
-                        next_selected, jump_index = jump_list_target(jump_list, jump_index, 1)
+                    next_selected, jump_index, focus_main = resolve_jump_action(
+                        sidebar_action, jump_list, jump_index
+                    )
+                    if focus_main:
+                        focus_main_pane()
+                        next_refresh_at = 0.0
+                        break
                     if next_selected is not None:
                         selected_pane_id = next_selected
                         user_scrolled = False
@@ -515,8 +527,11 @@ def run_interactive(stdscr) -> None:
             focus_main_pane()
             next_refresh_at = 0.0
         elif action == "jump_back":
-            next_selected, jump_index = jump_list_target(jump_list, jump_index, -1)
-            if next_selected is not None:
+            next_selected, jump_index, focus_main = resolve_jump_action(action, jump_list, jump_index)
+            if focus_main:
+                focus_main_pane()
+                next_refresh_at = 0.0
+            elif next_selected is not None:
                 selected_pane_id = next_selected
                 user_scrolled = False
                 selected_index = find_selected_row_index(rows, selected_pane_id)
@@ -524,7 +539,7 @@ def run_interactive(stdscr) -> None:
                 scroll_offset = ensure_visible(selected_index, scroll_offset, visible_lines, scrolloff)
                 needs_render = True
         elif action == "jump_forward":
-            next_selected, jump_index = jump_list_target(jump_list, jump_index, 1)
+            next_selected, jump_index, _ = resolve_jump_action(action, jump_list, jump_index)
             if next_selected is not None:
                 selected_pane_id = next_selected
                 user_scrolled = False

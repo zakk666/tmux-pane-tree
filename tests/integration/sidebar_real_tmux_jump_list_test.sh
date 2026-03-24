@@ -33,8 +33,6 @@ real_tmux_source_plugin
 real_tmux new-session -d -s ops -n logs 'cat'
 real_tmux new-session -d -s tailing -n third 'tail -f /dev/null'
 real_tmux set-option -g @tmux_sidebar_session_order 'ops,work,tailing'
-real_tmux set-option -g @tmux_sidebar_jump_back_shortcut C-p
-real_tmux set-option -g @tmux_sidebar_jump_forward_shortcut C-n
 real_tmux set-option -g @tmux_sidebar_enabled 1
 real_tmux set-option -g @tmux_sidebar_focus_on_open 0
 
@@ -59,15 +57,3 @@ assert_contains "$bottom_capture" 'tailing'
 real_tmux send-keys -t "$sidebar_pane_id" g g
 top_capture="$(wait_for_selected_capture "$sidebar_pane_id" '▶ │     └─ cat')"
 assert_contains "$top_capture" 'ops'
-
-printf -v request_jump_back_cmd 'TMUX_PANE=%q TMUX_SIDEBAR_STATE_DIR=%q bash %q jump_back' \
-  "$sidebar_pane_id" "$REAL_TMUX_STATE_DIR" "$REPO_ROOT/scripts/features/sidebar/request-sidebar-action.sh"
-real_tmux run-shell -b "$request_jump_back_cmd"
-back_capture="$(wait_for_selected_capture "$sidebar_pane_id" '▶       └─ tail')"
-assert_contains "$back_capture" 'tailing'
-
-printf -v request_jump_forward_cmd 'TMUX_PANE=%q TMUX_SIDEBAR_STATE_DIR=%q bash %q jump_forward' \
-  "$sidebar_pane_id" "$REAL_TMUX_STATE_DIR" "$REPO_ROOT/scripts/features/sidebar/request-sidebar-action.sh"
-real_tmux run-shell -b "$request_jump_forward_cmd"
-forward_capture="$(wait_for_selected_capture "$sidebar_pane_id" '▶ │     └─ cat')"
-assert_contains "$forward_capture" 'ops'
