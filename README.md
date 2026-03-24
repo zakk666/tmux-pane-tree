@@ -121,9 +121,12 @@ New windows and sessions are inserted relative to the currently selected row.
 Closing the last pane in a window removes the window; the last window removes
 the session.
 
-The jump list starts with the pane you focused the sidebar from. `gg` and `G`
-add new jump targets, `Ctrl+o` moves backward through that list, and `Ctrl+i`
-moves forward. The list is cleared as soon as the sidebar loses focus.
+The jump list starts with the pane you focused the sidebar from as two
+locations: its row inside the sidebar, then the tmux pane itself. `gg` and `G`
+add new sidebar-row jump targets, `Ctrl+o` moves backward through that list,
+and `Ctrl+i` moves forward. On the final backward jump, focus leaves the
+sidebar and returns to the original tmux pane. The list is cleared as soon as
+the sidebar loses focus.
 
 ## Configuration
 

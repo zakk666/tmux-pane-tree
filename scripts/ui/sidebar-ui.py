@@ -58,6 +58,9 @@ from sidebar_ui_lib.tree import (
 _refresh_requested = False
 _cached_shortcuts: dict[str, str] | None = None
 _cached_shortcuts_at: float = 0.0
+JUMP_LOCATION_TMUX = "tmux"
+JUMP_LOCATION_SIDEBAR = "sidebar"
+JumpEntry = tuple[str, str]
 
 
 def _handle_sigusr1(signum: int, frame: object) -> None:
@@ -178,24 +181,34 @@ def selected_pane_row(pane_rows: list[dict], selected_pane_id: str) -> dict | No
     return next((row for row in pane_rows if row["pane_id"] == selected_pane_id), pane_rows[0] if pane_rows else None)
 
 
-def seed_jump_list(jump_list: list[str], jump_index: int, selected_pane_id: str) -> tuple[list[str], int]:
+def seed_jump_list(
+    jump_list: list[JumpEntry], jump_index: int, main_pane_id: str, selected_pane_id: str
+) -> tuple[list[JumpEntry], int]:
     if jump_list or not selected_pane_id:
         return jump_list, jump_index
-    return [selected_pane_id], 0
+    sidebar_entry = (selected_pane_id, JUMP_LOCATION_SIDEBAR)
+    if not main_pane_id:
+        return [sidebar_entry], 0
+    return [(main_pane_id, JUMP_LOCATION_TMUX), sidebar_entry], 1
 
 
-def record_jump_target(jump_list: list[str], jump_index: int, pane_id: str) -> tuple[list[str], int]:
+def record_jump_target(
+    jump_list: list[JumpEntry], jump_index: int, pane_id: str
+) -> tuple[list[JumpEntry], int]:
     if not pane_id:
         return jump_list, jump_index
+    entry = (pane_id, JUMP_LOCATION_SIDEBAR)
     if jump_index < len(jump_list) - 1:
         jump_list = jump_list[: jump_index + 1]
-    if jump_list and jump_list[-1] == pane_id:
+    if jump_list and jump_list[-1] == entry:
         return jump_list, len(jump_list) - 1
-    jump_list = [*jump_list, pane_id]
+    jump_list = [*jump_list, entry]
     return jump_list, len(jump_list) - 1
 
 
-def jump_list_target(jump_list: list[str], jump_index: int, direction: int) -> tuple[str | None, int]:
+def jump_list_target(
+    jump_list: list[JumpEntry], jump_index: int, direction: int
+) -> tuple[JumpEntry | None, int]:
     next_index = jump_index + direction
     if next_index < 0 or next_index >= len(jump_list):
         return None, jump_index
@@ -203,12 +216,17 @@ def jump_list_target(jump_list: list[str], jump_index: int, direction: int) -> t
 
 
 def resolve_jump_action(
-    action: str, jump_list: list[str], jump_index: int
+    action: str, jump_list: list[JumpEntry], jump_index: int
 ) -> tuple[str | None, int, bool]:
     direction = -1 if action == "jump_back" else 1
-    next_selected, next_index = jump_list_target(jump_list, jump_index, direction)
-    focus_main = action == "jump_back" and next_selected is not None and next_index == 0
-    return next_selected, next_index, focus_main
+    next_entry, next_index = jump_list_target(jump_list, jump_index, direction)
+    if next_entry is None:
+        return None, jump_index, False
+    next_selected, location = next_entry
+    focus_main = action == "jump_back" and location == JUMP_LOCATION_TMUX
+    if focus_main:
+        return None, next_index, True
+    return next_selected, next_index, False
 
 
 def process_keypress(
@@ -294,7 +312,7 @@ def run_interactive(stdscr) -> None:
     search_mode = False
     search_query = ""
     search_matches: set[int] = set()
-    jump_list: list[str] = []
+    jump_list: list[JumpEntry] = []
     jump_index = -1
 
     while True:
@@ -313,7 +331,10 @@ def run_interactive(stdscr) -> None:
                 jump_list = []
                 jump_index = -1
             else:
-                jump_list, jump_index = seed_jump_list(jump_list, jump_index, selected_pane_id)
+                main_pane_id = tmux_option("@tmux_sidebar_main_pane") or selected_pane_id
+                jump_list, jump_index = seed_jump_list(
+                    jump_list, jump_index, main_pane_id, selected_pane_id
+                )
                 for sidebar_action in sidebar_actions:
                     next_selected, jump_index, focus_main = resolve_jump_action(
                         sidebar_action, jump_list, jump_index
