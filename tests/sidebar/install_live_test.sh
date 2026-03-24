@@ -43,4 +43,5 @@ assert_file_not_contains "$TMUX_CONF" "run-shell '$NORMALIZED_PLUGIN_DST/sidebar
 assert_file_not_contains "$TMUX_CONF" "run-shell '~/.config/tmux/plugins/tmux-sidebar/sidebar.tmux'"
 assert_file_contains "$CLAUDE_SETTINGS" 'scripts/features/hooks/hook-claude.sh'
 assert_file_contains "$CODEX_CONFIG" 'scripts/features/hooks/hook-codex.sh'
-assert_file_contains "$OPENCODE_PLUGIN" 'examples/opencode-hook.sh'
+assert_file_contains "$OPENCODE_PLUGIN" 'scripts/features/hooks/hook-opencode.sh'
+assert_file_contains "$OPENCODE_PLUGIN" 'properties?.status?.type'
