@@ -15,6 +15,7 @@ ops|@3|review|%4|python3|assistant runner|0
 ops|@4|shells|%5|zsh|zsh|0
 scratch|@5|notes|%6|bash|bash|0
 scratch|@6|2.1.76|%7|2.1.76|2.1.76|0
+lab|@7|shell|%8|zsh|zsh|0
 EOF
 
 cat > "$TMUX_SIDEBAR_STATE_DIR/pane-%3.json" <<'EOF'
@@ -23,6 +24,10 @@ EOF
 
 cat > "$TMUX_SIDEBAR_STATE_DIR/pane-%4.json" <<'EOF'
 {"pane_id":"%4","app":"claude","status":"running","updated_at":100}
+EOF
+
+cat > "$TMUX_SIDEBAR_STATE_DIR/pane-%8.json" <<'EOF'
+{"pane_id":"%8","app":"cursor","status":"running","updated_at":100}
 EOF
 
 output="$(python3 - <<'PY'
@@ -49,8 +54,9 @@ assert_contains "$output" '"%4"'
 assert_contains "$output" '"%5"'
 assert_contains "$output" '"%6"'
 assert_contains "$output" '"%7"'
+assert_contains "$output" '"%8"'
 
-printf ' codex , CLAUDE , opencode \n' > "$TEST_TMUX_DATA_DIR/option__tmux_sidebar_filter.txt"
+printf ' codex , CLAUDE , opencode , cursor \n' > "$TEST_TMUX_DATA_DIR/option__tmux_sidebar_filter.txt"
 
 output="$(python3 - <<'PY'
 import importlib.util
@@ -76,14 +82,17 @@ assert_contains "$output" '"%4"'
 assert_not_contains "$output" '"%5"'
 assert_not_contains "$output" '"%6"'
 assert_contains "$output" '"%7"'
+assert_contains "$output" '"%8"'
 
 assert_contains "$output" 'work'
 assert_contains "$output" 'ops'
 assert_contains "$output" 'scratch'
+assert_contains "$output" 'lab'
 assert_contains "$output" 'runner'
 assert_contains "$output" 'review'
 assert_not_contains "$output" 'shells'
 assert_contains "$output" 'claude'
+assert_contains "$output" 'cursor'
 assert_not_contains "$output" 'notes'
 
 output="$(python3 - <<'PY'

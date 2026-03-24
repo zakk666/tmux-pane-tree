@@ -24,6 +24,8 @@ chmod +x "$capture_peon"
 
 export TMUX_PANE="%7"
 export TMUX_SIDEBAR_UPDATE_HELPER="$capture_helper"
+fake_tmux_no_sidebar
+fake_tmux_register_pane "%7" "work" "@1" "editor" "bash"
 
 export TEST_HOOK_CAPTURE="$TEST_TMP/claude-hook.txt"
 printf '%s' '{"hook_event_name":"Notification","message":"Need input"}' | bash scripts/features/hooks/hook-claude.sh
@@ -135,3 +137,65 @@ assert_file_contains "$TEST_HOOK_CAPTURE" '--status running'
 export TEST_HOOK_CAPTURE="$TEST_TMP/opencode-hook-session-idle.txt"
 printf '%s' '{"event":"session.idle","message":"Ready"}' | bash scripts/features/hooks/hook-opencode.sh
 assert_file_contains "$TEST_HOOK_CAPTURE" '--status done'
+
+export TEST_HOOK_CAPTURE="$TEST_TMP/cursor-hook-session-start.txt"
+rm -f "$TEST_HOOK_CAPTURE"
+printf '%s' '{"hook_event_name":"sessionStart","workspace_roots":["/work/project"],"agent_message":"Ready"}' | bash scripts/features/hooks/hook-cursor.sh || true
+assert_file_contains "$TEST_HOOK_CAPTURE" '--app cursor'
+assert_file_contains "$TEST_HOOK_CAPTURE" '--status idle'
+
+fake_tmux_register_pane "%9" "work" "@1" "editor" "bash"
+export TEST_HOOK_CAPTURE="$TEST_TMP/cursor-hook-explicit-pane.txt"
+rm -f "$TEST_HOOK_CAPTURE"
+printf '%s' '{"hook_event_name":"sessionStart","pane_id":"%9","workspace_roots":["/work/project"],"agent_message":"Ready"}' | bash scripts/features/hooks/hook-cursor.sh || true
+assert_file_contains "$TEST_HOOK_CAPTURE" '--pane %9'
+
+export TEST_HOOK_CAPTURE="$TEST_TMP/cursor-hook-session-end.txt"
+rm -f "$TEST_HOOK_CAPTURE"
+printf '%s' '{"hook_event_name":"sessionEnd","workspace_roots":["/work/project"],"agent_message":"Done"}' | bash scripts/features/hooks/hook-cursor.sh || true
+assert_file_contains "$TEST_HOOK_CAPTURE" '--status idle'
+
+export TEST_HOOK_CAPTURE="$TEST_TMP/cursor-hook-submit.txt"
+rm -f "$TEST_HOOK_CAPTURE"
+printf '%s' '{"hook_event_name":"beforeSubmitPrompt","workspace_roots":["/work/project"],"agent_message":"Starting"}' | bash scripts/features/hooks/hook-cursor.sh || true
+assert_file_contains "$TEST_HOOK_CAPTURE" '--status running'
+
+export TEST_HOOK_CAPTURE="$TEST_TMP/cursor-hook-subagent-start.txt"
+rm -f "$TEST_HOOK_CAPTURE"
+printf '%s' '{"hook_event_name":"subagentStart","workspace_roots":["/work/project"],"agent_message":"Delegating"}' | bash scripts/features/hooks/hook-cursor.sh || true
+assert_file_contains "$TEST_HOOK_CAPTURE" '--status running'
+
+export TEST_HOOK_CAPTURE="$TEST_TMP/cursor-hook-subagent-stop.txt"
+rm -f "$TEST_HOOK_CAPTURE"
+printf '%s' '{"hook_event_name":"subagentStop","workspace_roots":["/work/project"],"agent_message":"Subagent finished"}' | bash scripts/features/hooks/hook-cursor.sh || true
+assert_file_contains "$TEST_HOOK_CAPTURE" '--status done'
+
+export TEST_HOOK_CAPTURE="$TEST_TMP/cursor-hook-stop-completed.txt"
+rm -f "$TEST_HOOK_CAPTURE"
+printf '%s' '{"hook_event_name":"stop","workspace_roots":["/work/project"],"status":"completed","agent_message":"Finished task"}' | bash scripts/features/hooks/hook-cursor.sh || true
+assert_file_contains "$TEST_HOOK_CAPTURE" '--status done'
+
+export TEST_HOOK_CAPTURE="$TEST_TMP/cursor-hook-stop-aborted.txt"
+rm -f "$TEST_HOOK_CAPTURE"
+printf '%s' '{"hook_event_name":"stop","workspace_roots":["/work/project"],"status":"aborted","agent_message":"Stopped"}' | bash scripts/features/hooks/hook-cursor.sh || true
+assert_file_contains "$TEST_HOOK_CAPTURE" '--status idle'
+
+export TEST_HOOK_CAPTURE="$TEST_TMP/cursor-hook-stop-error.txt"
+rm -f "$TEST_HOOK_CAPTURE"
+printf '%s' '{"hook_event_name":"stop","workspace_roots":["/work/project"],"status":"error","agent_message":"Crashed"}' | bash scripts/features/hooks/hook-cursor.sh || true
+assert_file_contains "$TEST_HOOK_CAPTURE" '--status error'
+
+export TEST_HOOK_CAPTURE="$TEST_TMP/cursor-hook-permission-denied.txt"
+rm -f "$TEST_HOOK_CAPTURE"
+printf '%s' '{"hook_event_name":"postToolUseFailure","workspace_roots":["/work/project"],"failure_type":"permission_denied","error_message":"Need approval"}' | bash scripts/features/hooks/hook-cursor.sh || true
+assert_file_contains "$TEST_HOOK_CAPTURE" '--status needs-input'
+
+export TEST_HOOK_CAPTURE="$TEST_TMP/cursor-hook-timeout.txt"
+rm -f "$TEST_HOOK_CAPTURE"
+printf '%s' '{"hook_event_name":"postToolUseFailure","workspace_roots":["/work/project"],"failure_type":"timeout","error_message":"Timed out"}' | bash scripts/features/hooks/hook-cursor.sh || true
+assert_file_contains "$TEST_HOOK_CAPTURE" '--status error'
+
+export TEST_HOOK_CAPTURE="$TEST_TMP/cursor-hook-failure.txt"
+rm -f "$TEST_HOOK_CAPTURE"
+printf '%s' '{"hook_event_name":"postToolUseFailure","workspace_roots":["/work/project"],"failure_type":"error","error_message":"Exploded"}' | bash scripts/features/hooks/hook-cursor.sh || true
+assert_file_contains "$TEST_HOOK_CAPTURE" '--status error'

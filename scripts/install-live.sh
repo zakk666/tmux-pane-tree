@@ -6,6 +6,7 @@ PLUGIN_DST="${PLUGIN_DST:-$HOME/.config/tmux/plugins/tmux-sidebar}"
 TMUX_CONF="${TMUX_CONF:-$HOME/.config/tmux/tmux.conf}"
 CLAUDE_SETTINGS="${CLAUDE_SETTINGS:-$HOME/.claude/settings.json}"
 CODEX_CONFIG="${CODEX_CONFIG:-$HOME/.codex/config.toml}"
+CURSOR_HOOKS="${CURSOR_HOOKS:-$HOME/.cursor/hooks.json}"
 TIMESTAMP="${TIMESTAMP:-$(date +%Y%m%d%H%M%S)}"
 
 mkdir -p "$(dirname "$PLUGIN_DST")"
@@ -46,6 +47,7 @@ PY
 
 CLAUDE_SETTINGS="$CLAUDE_SETTINGS" \
 CODEX_CONFIG="$CODEX_CONFIG" \
+CURSOR_HOOKS="$CURSOR_HOOKS" \
 TIMESTAMP="$TIMESTAMP" \
 bash "$PLUGIN_DST/scripts/features/hooks/install-agent-hooks.sh"
 

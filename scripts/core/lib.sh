@@ -55,6 +55,87 @@ json_get_number() {
   sed -n "s/.*\"$key\":\\([0-9][0-9]*\\).*/\\1/p" "$path"
 }
 
+pane_exists() {
+  local pane_id="${1:-}"
+  [[ "$pane_id" =~ ^%[0-9]+$ ]] || return 1
+  tmux display-message -p -t "$pane_id" '#{pane_id}' >/dev/null 2>&1
+}
+
+resolve_agent_target_pane() {
+  local explicit_pane="${1:-}"
+  local root raw_panes best_pane pane_id pane_path pane_active exact prefix_length pane_number
+  shift || true
+
+  if pane_exists "$explicit_pane"; then
+    printf '%s\n' "$explicit_pane"
+    return 0
+  fi
+
+  if pane_exists "${TMUX_PANE:-}"; then
+    printf '%s\n' "${TMUX_PANE:-}"
+    return 0
+  fi
+
+  [ "$#" -gt 0 ] || return 0
+
+  raw_panes="$(tmux list-panes -a -F '#{pane_id}|#{pane_current_path}|#{pane_active}' 2>/dev/null || true)"
+  [ -n "$raw_panes" ] || return 0
+
+  for root in "$@"; do
+    local best_exact="-1"
+    local best_active="-1"
+    local best_prefix="-1"
+    local best_number="-1"
+
+    [ -n "$root" ] || continue
+    best_pane=""
+
+    while IFS='|' read -r pane_id pane_path pane_active; do
+      [ -n "$pane_id" ] || continue
+      [ -n "$pane_path" ] || continue
+
+      exact=0
+      prefix_length=-1
+      if [ "$pane_path" = "$root" ]; then
+        exact=1
+        prefix_length="${#root}"
+      elif [[ "$pane_path" == "$root/"* ]]; then
+        prefix_length="${#root}"
+      elif [[ "$root" == "$pane_path/"* ]]; then
+        prefix_length="${#pane_path}"
+      fi
+
+      [ "$prefix_length" -ge 0 ] || continue
+
+      pane_number="${pane_id#%}"
+      if [ -z "$best_pane" ] \
+        || [ "$exact" -gt "$best_exact" ] \
+        || { [ "$exact" -eq "$best_exact" ] && [ "$pane_active" -gt "$best_active" ]; } \
+        || { [ "$exact" -eq "$best_exact" ] && [ "$pane_active" -eq "$best_active" ] && [ "$prefix_length" -gt "$best_prefix" ]; } \
+        || {
+          [ "$exact" -eq "$best_exact" ] \
+          && [ "$pane_active" -eq "$best_active" ] \
+          && [ "$prefix_length" -eq "$best_prefix" ] \
+          && [ "$pane_number" -lt "$best_number" ]
+        }
+      then
+        best_pane="$pane_id"
+        best_exact="$exact"
+        best_active="$pane_active"
+        best_prefix="$prefix_length"
+        best_number="$pane_number"
+      fi
+    done <<EOF
+$raw_panes
+EOF
+
+    if [ -n "$best_pane" ]; then
+      printf '%s\n' "$best_pane"
+      return 0
+    fi
+  done
+}
+
 clear_terminal_pane_state() {
   local state_file="$1"
   [ -f "$state_file" ] || return 1

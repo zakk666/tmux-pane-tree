@@ -10,9 +10,10 @@ NORMALIZED_PLUGIN_DST="$(python3 -c 'from pathlib import Path; import sys; print
 TMUX_CONF="$HOME_DIR/.config/tmux/tmux.conf"
 CLAUDE_SETTINGS="$HOME_DIR/.claude/settings.json"
 CODEX_CONFIG="$HOME_DIR/.codex/config.toml"
+CURSOR_HOOKS="$HOME_DIR/.cursor/hooks.json"
 OPENCODE_PLUGIN="$HOME_DIR/.config/opencode/plugins/tmux-sidebar.js"
 
-mkdir -p "$(dirname "$TMUX_CONF")" "$(dirname "$CLAUDE_SETTINGS")" "$(dirname "$CODEX_CONFIG")"
+mkdir -p "$(dirname "$TMUX_CONF")" "$(dirname "$CLAUDE_SETTINGS")" "$(dirname "$CODEX_CONFIG")" "$(dirname "$CURSOR_HOOKS")"
 
 cat > "$TMUX_CONF" <<'EOF'
 run '~/.config/tmux/plugins/tpm/tpm'
@@ -34,6 +35,7 @@ PLUGIN_DST="$PLUGIN_DST" \
 TMUX_CONF="$TMUX_CONF" \
 CLAUDE_SETTINGS="$CLAUDE_SETTINGS" \
 CODEX_CONFIG="$CODEX_CONFIG" \
+CURSOR_HOOKS="$CURSOR_HOOKS" \
 TIMESTAMP="20260320000000" \
 bash "$REPO_ROOT/scripts/install-live.sh"
 
@@ -43,5 +45,7 @@ assert_file_not_contains "$TMUX_CONF" "run-shell '$NORMALIZED_PLUGIN_DST/sidebar
 assert_file_not_contains "$TMUX_CONF" "run-shell '~/.config/tmux/plugins/tmux-sidebar/sidebar.tmux'"
 assert_file_contains "$CLAUDE_SETTINGS" 'scripts/features/hooks/hook-claude.sh'
 assert_file_contains "$CODEX_CONFIG" 'scripts/features/hooks/hook-codex.sh'
+assert_file_contains "$CURSOR_HOOKS" "$NORMALIZED_PLUGIN_DST/scripts/features/hooks/hook-cursor.sh"
+assert_file_contains "$CURSOR_HOOKS" '"afterAgentResponse"'
 assert_file_contains "$OPENCODE_PLUGIN" 'scripts/features/hooks/hook-opencode.sh'
 assert_file_contains "$OPENCODE_PLUGIN" 'properties?.status?.type'

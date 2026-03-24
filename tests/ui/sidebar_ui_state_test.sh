@@ -156,6 +156,75 @@ output="$(python3 scripts/ui/sidebar-ui.py --dump-render 2>&1)"
 assert_contains "$output" 'opencode ⏳'
 
 fake_tmux_set_tree <<'EOF'
+work|@1|editor|%112|zsh|zsh|1
+EOF
+cat > "$TMUX_SIDEBAR_STATE_DIR/pane-%112.json" <<'EOF'
+{"pane_id":"%112","app":"cursor","status":"running","updated_at":100}
+EOF
+
+output="$(python3 scripts/ui/sidebar-ui.py --dump-render 2>&1)"
+
+assert_contains "$output" 'cursor ⏳'
+
+fake_tmux_set_tree <<'EOF'
+work|@1|editor|%113|zsh|zsh|1
+EOF
+cat > "$TMUX_SIDEBAR_STATE_DIR/pane-%113.json" <<'EOF'
+{"pane_id":"%113","app":"cursor","status":"needs-input","updated_at":100}
+EOF
+
+output="$(python3 scripts/ui/sidebar-ui.py --dump-render 2>&1)"
+
+assert_contains "$output" 'cursor ❓'
+
+fake_tmux_set_tree <<'EOF'
+work|@1|editor|%114|zsh|zsh|1
+EOF
+cat > "$TMUX_SIDEBAR_STATE_DIR/pane-%114.json" <<'EOF'
+{"pane_id":"%114","app":"cursor","status":"done","updated_at":100}
+EOF
+
+output="$(python3 scripts/ui/sidebar-ui.py --dump-render 2>&1)"
+
+assert_contains "$output" 'cursor ✅'
+
+fake_tmux_set_tree <<'EOF'
+work|@1|editor|%115|zsh|zsh|1
+EOF
+cat > "$TMUX_SIDEBAR_STATE_DIR/pane-%115.json" <<'EOF'
+{"pane_id":"%115","app":"cursor","status":"error","updated_at":100}
+EOF
+
+output="$(python3 scripts/ui/sidebar-ui.py --dump-render 2>&1)"
+
+assert_contains "$output" 'cursor ❌'
+
+fake_tmux_set_tree <<'EOF'
+work|@1|zsh|%116|zsh|zsh|1
+EOF
+cat > "$TMUX_SIDEBAR_STATE_DIR/pane-%116.json" <<'EOF'
+{"pane_id":"%116","app":"cursor","status":"running","updated_at":100}
+EOF
+
+output="$(python3 scripts/ui/sidebar-ui.py --dump-render 2>&1)"
+
+window_line="$(printf '%s\n' "$output" | grep -E '^\s+[├└]─' | sed -n '2p')"
+assert_contains "$window_line" 'cursor'
+assert_not_contains "$window_line" 'zsh'
+
+fake_tmux_set_tree <<'EOF'
+work|@1|editor|%117|zsh|zsh|1
+EOF
+cat > "$TMUX_SIDEBAR_STATE_DIR/pane-%117.json" <<'EOF'
+{"pane_id":"%117","app":"cursor","status":"idle","updated_at":100}
+EOF
+
+output="$(python3 scripts/ui/sidebar-ui.py --dump-render 2>&1)"
+
+assert_contains "$output" 'zsh'
+assert_not_contains "$output" 'cursor'
+
+fake_tmux_set_tree <<'EOF'
 work|@1|editor|%8|codex-aarch64-apple-darwin|● project: done|1
 EOF
 cat > "$TMUX_SIDEBAR_STATE_DIR/pane-%8.json" <<'EOF'

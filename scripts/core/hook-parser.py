@@ -142,6 +142,55 @@ def parse_opencode(event: str, payload: str) -> tuple[str, str]:
     return status, message
 
 
+def parse_cursor(event: str, payload: str) -> tuple[str, str]:
+    data = load_payload(payload)
+    raw_event = str(
+        event
+        or data.get("hook_event_name")
+        or data.get("event")
+        or data.get("type")
+        or ""
+    ).strip().lower().replace("_", "").replace("-", "")
+    status_hint = str(data.get("status") or data.get("state") or "").strip().lower().replace("_", "-")
+    failure_type = str(data.get("failure_type") or "").strip().lower().replace("_", "-")
+    message = str(
+        data.get("agent_message")
+        or data.get("error_message")
+        or data.get("message")
+        or data.get("summary")
+        or ""
+    ).strip()
+
+    if raw_event in ("sessionstart", "sessionend"):
+        status = "idle"
+    elif raw_event in (
+        "beforesubmitprompt",
+        "pretooluse",
+        "posttooluse",
+        "subagentstart",
+        "afteragentthought",
+        "afteragentresponse",
+    ):
+        status = "running"
+    elif raw_event == "subagentstop":
+        status = "done"
+    elif raw_event == "posttoolusefailure":
+        status = "needs-input" if failure_type == "permission-denied" else "error"
+    elif raw_event == "stop":
+        if status_hint == "completed":
+            status = "done"
+        elif status_hint == "error":
+            status = "error"
+        elif status_hint == "aborted":
+            status = "idle"
+        else:
+            status = ""
+    else:
+        status = ""
+
+    return status, message
+
+
 def write_result(status: str, message: str) -> None:
     print(status)
     if message:
@@ -150,7 +199,7 @@ def write_result(status: str, message: str) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("app", choices=("claude", "codex", "opencode"))
+    parser.add_argument("app", choices=("claude", "codex", "opencode", "cursor"))
     parser.add_argument("event", nargs="?", default="")
     args = parser.parse_args()
 
@@ -159,6 +208,8 @@ def main() -> None:
         status, message = parse_claude(payload)
     elif args.app == "codex":
         status, message = parse_codex(args.event, payload)
+    elif args.app == "cursor":
+        status, message = parse_cursor(args.event, payload)
     else:
         status, message = parse_opencode(args.event, payload)
     write_result(status, message)

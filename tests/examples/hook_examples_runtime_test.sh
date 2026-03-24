@@ -30,6 +30,14 @@ cat > "${TEST_HOOK_STDIN_CAPTURE:?}"
 EOF
 chmod +x "$plugin_dir/scripts/features/hooks/hook-opencode.sh"
 
+cat > "$plugin_dir/scripts/features/hooks/hook-cursor.sh" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+printf '%s\n' "${1:-}" > "${TEST_HOOK_ARGV_CAPTURE:?}"
+cat > "${TEST_HOOK_STDIN_CAPTURE:?}"
+EOF
+chmod +x "$plugin_dir/scripts/features/hooks/hook-cursor.sh"
+
 export TMUX_SIDEBAR_PLUGIN_DIR="$plugin_dir"
 
 export TEST_HOOK_ARGV_CAPTURE="$TEST_TMP/claude-argv.txt"
@@ -63,4 +71,19 @@ bash examples/opencode-hook.sh
 assert_file_contains "$TEST_HOOK_STDIN_CAPTURE" '"event":"session-start"'
 assert_file_contains "$TEST_HOOK_STDIN_CAPTURE" '"status":"ready"'
 assert_file_contains "$TEST_HOOK_STDIN_CAPTURE" '"message":"Ready"'
+assert_eq "$(cat "$TEST_HOOK_ARGV_CAPTURE")" ""
+
+export TEST_HOOK_ARGV_CAPTURE="$TEST_TMP/cursor-argv.txt"
+export TEST_HOOK_STDIN_CAPTURE="$TEST_TMP/cursor-stdin.json"
+export CURSOR_HOOK_EVENT_NAME="postToolUseFailure"
+export CURSOR_WORKSPACE_ROOTS="/tmp/project-a:/tmp/project-b"
+export CURSOR_STATUS="error"
+export CURSOR_FAILURE_TYPE="permission_denied"
+export CURSOR_AGENT_MESSAGE="Need approval"
+bash examples/cursor-hook.sh
+assert_file_contains "$TEST_HOOK_STDIN_CAPTURE" '"hook_event_name":"postToolUseFailure"'
+assert_file_contains "$TEST_HOOK_STDIN_CAPTURE" '"/tmp/project-a","/tmp/project-b"'
+assert_file_contains "$TEST_HOOK_STDIN_CAPTURE" '"status":"error"'
+assert_file_contains "$TEST_HOOK_STDIN_CAPTURE" '"failure_type":"permission_denied"'
+assert_file_contains "$TEST_HOOK_STDIN_CAPTURE" '"agent_message":"Need approval"'
 assert_eq "$(cat "$TEST_HOOK_ARGV_CAPTURE")" ""

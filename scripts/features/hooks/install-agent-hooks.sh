@@ -5,10 +5,11 @@ SCRIPT_DIR="$(CDPATH= cd -- "$(dirname "$0")" && pwd)"
 PLUGIN_DST="${PLUGIN_DST:-$(CDPATH= cd -- "$SCRIPT_DIR/../../.." && pwd)}"
 CLAUDE_SETTINGS="${CLAUDE_SETTINGS:-$HOME/.claude/settings.json}"
 CODEX_CONFIG="${CODEX_CONFIG:-$HOME/.codex/config.toml}"
+CURSOR_HOOKS="${CURSOR_HOOKS:-$HOME/.cursor/hooks.json}"
 OPENCODE_PLUGIN="${OPENCODE_PLUGIN:-$HOME/.config/opencode/plugins/tmux-sidebar.js}"
 TIMESTAMP="${TIMESTAMP:-$(date +%Y%m%d%H%M%S)}"
 
-mkdir -p "$(dirname "$CLAUDE_SETTINGS")" "$(dirname "$CODEX_CONFIG")" "$(dirname "$OPENCODE_PLUGIN")"
+mkdir -p "$(dirname "$CLAUDE_SETTINGS")" "$(dirname "$CODEX_CONFIG")" "$(dirname "$CURSOR_HOOKS")" "$(dirname "$OPENCODE_PLUGIN")"
 
 if [ -f "$CLAUDE_SETTINGS" ]; then
   cp "$CLAUDE_SETTINGS" "$CLAUDE_SETTINGS.bak-tmux-sidebar-$TIMESTAMP"
@@ -89,6 +90,58 @@ if re.search(r"^notify\s*=\s*\[.*\]$", text, flags=re.M):
 else:
     text = text.rstrip() + ("\n" if text.rstrip() else "") + line + "\n"
 path.write_text(text)
+PY
+
+if [ -f "$CURSOR_HOOKS" ]; then
+  cp "$CURSOR_HOOKS" "$CURSOR_HOOKS.bak-tmux-sidebar-$TIMESTAMP"
+else
+  printf '{\n  "version": 1,\n  "hooks": {}\n}\n' > "$CURSOR_HOOKS"
+fi
+
+CURSOR_HOOKS="$CURSOR_HOOKS" PLUGIN_DST="$PLUGIN_DST" python3 - <<'PY'
+import json
+import os
+from pathlib import Path
+
+path = Path(os.environ["CURSOR_HOOKS"]).expanduser()
+plugin_dir = Path(os.environ["PLUGIN_DST"]).expanduser()
+text = path.read_text().strip()
+data = json.loads(text) if text else {}
+if not isinstance(data, dict):
+    data = {}
+data["version"] = 1
+hooks = data.setdefault("hooks", {})
+if not isinstance(hooks, dict):
+    raise SystemExit("cursor hooks config must contain an object-valued 'hooks' field")
+command = str(plugin_dir / "scripts/features/hooks/hook-cursor.sh")
+
+def ensure_event(event_name: str) -> None:
+    entries = hooks.setdefault(event_name, [])
+    if not isinstance(entries, list):
+        entries = []
+        hooks[event_name] = entries
+    for entry in entries:
+        if entry.get("command") == command:
+            entry["timeout"] = 10
+            return
+    entries.append({"command": command, "timeout": 10})
+
+for event_name in (
+    "sessionStart",
+    "sessionEnd",
+    "beforeSubmitPrompt",
+    "preToolUse",
+    "postToolUse",
+    "postToolUseFailure",
+    "subagentStart",
+    "subagentStop",
+    "afterAgentThought",
+    "afterAgentResponse",
+    "stop",
+):
+    ensure_event(event_name)
+
+path.write_text(json.dumps(data, indent=2) + "\n")
 PY
 
 if [ -f "$OPENCODE_PLUGIN" ]; then

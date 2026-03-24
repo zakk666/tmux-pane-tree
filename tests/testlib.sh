@@ -65,6 +65,7 @@ fake_tmux_register_pane() {
   local pane_title="$5"
   local pane_current_command="${6:-$5}"
   local window_index="${7:-0}"
+  local pane_current_path="${8:-}"
   cat > "$TEST_TMUX_DATA_DIR/pane_${pane_id//%/}.meta" <<EOF
 session_name='$session_name'
 window_id='$window_id'
@@ -72,6 +73,7 @@ window_name='$window_name'
 pane_title='$pane_title'
 pane_current_command='$pane_current_command'
 window_index='$window_index'
+pane_current_path='$pane_current_path'
 EOF
 }
 
@@ -107,6 +109,7 @@ window_name=$sidebar_window_name
 pane_title=$SIDEBAR_PANE_TITLE
 pane_current_command=python3
 window_index=$sidebar_window_index
+pane_current_path=
 EOF
   printf '%s|%s|%s\n' "$pane_id" "$SIDEBAR_PANE_TITLE" "$target_window_id" >> "$TEST_TMUX_DATA_DIR/toggle_panes.txt"
 }
@@ -203,6 +206,14 @@ case "$command_name" in
       printf '%s\n' "$pane_title"
       exit 0
     fi
+    if [ -z "$target" ] && [ "$format" = '#{pane_current_path}' ]; then
+      current_pane="$(cat "$data_dir/current_pane.txt")"
+      meta_file="$data_dir/pane_${current_pane//%/}.meta"
+      [ -f "$meta_file" ] || exit 1
+      . "$meta_file"
+      printf '%s\n' "${pane_current_path:-}"
+      exit 0
+    fi
     if [ -z "$target" ] && [ "$format" = '#{session_name}' ]; then
       current_pane="$(cat "$data_dir/current_pane.txt")"
       meta_file="$data_dir/pane_${current_pane//%/}.meta"
@@ -221,6 +232,7 @@ case "$command_name" in
     result="${result//\#\{window_index\}/$window_index}"
     result="${result//\#\{pane_title\}/$pane_title}"
     result="${result//\#\{pane_current_command\}/$pane_current_command}"
+    result="${result//\#\{pane_current_path\}/${pane_current_path:-}}"
     layout_file="$data_dir/window_layout_${window_id//@/_}.txt"
     if [ -f "$layout_file" ]; then
       window_layout="$(cat "$layout_file")"
@@ -249,7 +261,7 @@ case "$command_name" in
           ;;
       esac
     done
-    if [[ "$format" == '#{pane_id}|#{pane_title}' || "$format" == '#{pane_id}|#{pane_title}|#{window_id}' || "$format" == '#{pane_id}|#{pane_title}|#{session_name}|#{window_id}' || "$format" == '#{pane_id}|#{pane_active}' || "$format" == '#{pane_id}' || "$format" == '#{session_name}' ]]; then
+    if [[ "$format" == '#{pane_id}|#{pane_title}' || "$format" == '#{pane_id}|#{pane_title}|#{window_id}' || "$format" == '#{pane_id}|#{pane_title}|#{session_name}|#{window_id}' || "$format" == '#{pane_id}|#{pane_active}' || "$format" == '#{pane_id}|#{pane_current_path}' || "$format" == '#{pane_id}|#{pane_current_path}|#{pane_active}' || "$format" == '#{pane_id}' || "$format" == '#{session_name}' ]]; then
       found="0"
       if [ "$format" = '#{session_name}' ]; then
         if [ -z "$target_window" ] && [ -s "$data_dir/list_panes.txt" ]; then
@@ -307,6 +319,16 @@ case "$command_name" in
               printf '%s|1\n' "$pane_id"
             else
               printf '%s|0\n' "$pane_id"
+            fi
+            ;;
+          '#{pane_id}|#{pane_current_path}')
+            printf '%s|%s\n' "$pane_id" "${pane_current_path:-}"
+            ;;
+          '#{pane_id}|#{pane_current_path}|#{pane_active}')
+            if [ "$pane_id" = "$window_active_pane" ]; then
+              printf '%s|%s|1\n' "$pane_id" "${pane_current_path:-}"
+            else
+              printf '%s|%s|0\n' "$pane_id" "${pane_current_path:-}"
             fi
             ;;
           '#{pane_id}')

@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-plugin_dir="${TMUX_SIDEBAR_PLUGIN_DIR:-$(CDPATH= cd -- "$(dirname "$0")/../../.." && pwd)}"
+SCRIPT_DIR="$(CDPATH= cd -- "$(dirname "$0")" && pwd)"
+plugin_dir="$(CDPATH= cd -- "$SCRIPT_DIR/../../.." && pwd)"
 
 toggle_key="$(tmux show-options -gv @tmux_sidebar_toggle_key 2>/dev/null || true)"
 focus_key="$(tmux show-options -gv @tmux_sidebar_focus_key 2>/dev/null || true)"

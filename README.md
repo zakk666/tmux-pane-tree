@@ -3,7 +3,7 @@
 [![Tests](https://github.com/sandudorogan/tmux-sidebar/actions/workflows/test.yml/badge.svg)](https://github.com/sandudorogan/tmux-sidebar/actions/workflows/test.yml)
 
 A tmux plugin that keeps a persistent, interactive session tree on the left
-side of every window, with live badges for `claude`, `codex`, and `opencode`.
+side of every window, with live badges for `claude`, `codex`, `cursor`, and `opencode`.
 
 ```
   ┌─ Sidebar ────────────┬────────────────────────────────┐
@@ -74,7 +74,7 @@ source-file ~/.tmux/plugins/tmux-sidebar/sidebar.tmux
 
 Then `tmux source-file ~/.tmux.conf`.
 
-To patch Claude Code, Codex, and OpenCode hook config after a manual install:
+To patch Claude Code, Codex, Cursor, and OpenCode hook config after a manual install:
 
 ```bash
 bash ~/.tmux/plugins/tmux-sidebar/scripts/features/hooks/install-agent-hooks.sh
@@ -160,7 +160,7 @@ sessions from the sidebar updates this list automatically.
 Show only panes matching a comma-separated list of process or agent tokens:
 
 ```tmux
-set -g @tmux_sidebar_filter "opencode,codex,claude"
+set -g @tmux_sidebar_filter "opencode,codex,claude,cursor"
 ```
 
 Matching is case-insensitive and checks pane command, pane title, and stored
@@ -279,7 +279,7 @@ set -g @tmux_sidebar_install_agent_hooks 1   # default: 0
 | `@tmux_sidebar_color_pane`            |    —    | Pane name color (hex)            |
 | `@tmux_sidebar_toggle_key`            |   `t`   | Tmux key to toggle sidebar       |
 | `@tmux_sidebar_focus_key`             |   `T`   | Tmux key to focus sidebar        |
-| `@tmux_sidebar_install_agent_hooks`   |   `0`   | Install Claude/Codex/OpenCode hooks on load |
+| `@tmux_sidebar_install_agent_hooks`   |   `0`   | Install Claude/Codex/Cursor/OpenCode hooks on load |
 
 | Environment variable     | Description                                                                                    |
 | ------------------------ | ---------------------------------------------------------------------------------------------- |
@@ -307,6 +307,7 @@ The installer updates:
 
 - `~/.claude/settings.json`
 - `~/.codex/config.toml`
+- `~/.cursor/hooks.json`
 - `~/.config/opencode/plugins/tmux-sidebar.js`
 
 It also creates timestamped backups before changing existing files.
@@ -318,9 +319,17 @@ wrappers under `scripts/features/hooks/`:
 
 - Claude Code: `hook-claude.sh`
 - Codex: `hook-codex.sh`
+- Cursor: `hook-cursor.sh`
 - OpenCode: `hook-opencode.sh`
 
 Ready-to-copy examples live in `examples/`.
+
+Cursor uses native hooks in `~/.cursor/hooks.json`. The sidebar binds Cursor
+events to panes by preferring `TMUX_PANE` when Cursor was launched from that
+tmux pane, then falling back to the first `workspace_roots` entry that matches
+a tmux pane working directory. Cursor does not emit Claude-style permission
+events, so the `needs-input` badge is inferred from `postToolUseFailure` events
+with `failure_type=permission_denied`.
 
 ## Requirements
 
