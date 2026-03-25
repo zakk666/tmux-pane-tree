@@ -39,8 +39,8 @@ CURSOR_HOOKS="$CURSOR_HOOKS" \
 TIMESTAMP="20260320000000" \
 bash "$REPO_ROOT/scripts/install-live.sh"
 
-assert_file_contains "$PLUGIN_DST/sidebar.tmux" 'scripts/features/context-menu/bind-context-menu.sh'
-assert_file_contains "$TMUX_CONF" "source-file $NORMALIZED_PLUGIN_DST/sidebar.tmux"
+assert_file_contains "$PLUGIN_DST/sidebar.conf" 'scripts/features/context-menu/bind-context-menu.sh'
+assert_file_contains "$TMUX_CONF" "source-file $NORMALIZED_PLUGIN_DST/sidebar.conf"
 assert_file_not_contains "$TMUX_CONF" "run-shell '$NORMALIZED_PLUGIN_DST/sidebar.tmux'"
 assert_file_not_contains "$TMUX_CONF" "run-shell '~/.config/tmux/plugins/tmux-sidebar/sidebar.tmux'"
 assert_file_contains "$CLAUDE_SETTINGS" 'scripts/features/hooks/hook-claude.sh'

@@ -121,7 +121,7 @@ tmux source-file sidebar.tmux
 
 ### tmux plugin conventions
 
-- `sidebar.tmux` has no shebang — tmux sources it directly
+- `sidebar.tmux` is a bash wrapper (with shebang) that sources `sidebar.conf` — TPM executes `.tmux` files as scripts, so raw tmux commands live in `sidebar.conf`
 - Use `#{d:current_file}` for relative paths in hook registrations
 - Hook indices (e.g. `[198]`) are namespaced to avoid collisions with other plugins
 - State stored in tmux global options prefixed `@tmux_sidebar_`

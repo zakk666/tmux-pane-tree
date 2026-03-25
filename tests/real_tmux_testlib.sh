@@ -172,7 +172,7 @@ real_tmux_start_server() {
 }
 
 real_tmux_source_plugin() {
-  real_tmux_source_file "$REPO_ROOT/sidebar.tmux"
+  real_tmux_source_file "$REPO_ROOT/sidebar.conf"
 }
 
 real_tmux_source_file() {

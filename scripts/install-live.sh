@@ -21,22 +21,25 @@ python3 - <<'PY'
 from pathlib import Path
 
 path = Path.home() / ".config/tmux/tmux.conf"
-old_line = 'if-shell "test -f ~/.config/tmux/plugins/tmux-sidebar/sidebar.tmux" "source-file ~/.config/tmux/plugins/tmux-sidebar/sidebar.tmux"'
-tilde_line = "source-file ~/.config/tmux/plugins/tmux-sidebar/sidebar.tmux"
-line = f"source-file {Path.home() / '.config/tmux/plugins/tmux-sidebar/sidebar.tmux'}"
-old_run_shell_tilde = "run-shell '~/.config/tmux/plugins/tmux-sidebar/sidebar.tmux'"
-old_run_shell_line = f"run-shell '{Path.home() / '.config/tmux/plugins/tmux-sidebar/sidebar.tmux'}'"
+plugin_dir = "~/.config/tmux/plugins/tmux-sidebar"
+abs_plugin_dir = str(Path.home() / ".config/tmux/plugins/tmux-sidebar")
+line = f"source-file {abs_plugin_dir}/sidebar.conf"
+stale_patterns = [
+    f'if-shell "test -f {plugin_dir}/sidebar.tmux" "source-file {plugin_dir}/sidebar.tmux"',
+    f"source-file {plugin_dir}/sidebar.tmux",
+    f"source-file {abs_plugin_dir}/sidebar.tmux",
+    f"run-shell '{plugin_dir}/sidebar.tmux'",
+    f"run-shell '{abs_plugin_dir}/sidebar.tmux'",
+    f'if-shell "test -f {plugin_dir}/sidebar.conf" "source-file {plugin_dir}/sidebar.conf"',
+    f"source-file {plugin_dir}/sidebar.conf",
+    f"source-file {abs_plugin_dir}/sidebar.conf",
+    f"run-shell '{plugin_dir}/sidebar.conf'",
+    f"run-shell '{abs_plugin_dir}/sidebar.conf'",
+]
 text = path.read_text()
-text = text.replace(old_line + "\n", "")
-text = text.replace("\n" + old_line, "")
-text = text.replace(tilde_line + "\n", "")
-text = text.replace("\n" + tilde_line, "")
-text = text.replace(line + "\n", "")
-text = text.replace("\n" + line, "")
-text = text.replace(old_run_shell_tilde + "\n", "")
-text = text.replace("\n" + old_run_shell_tilde, "")
-text = text.replace(old_run_shell_line + "\n", "")
-text = text.replace("\n" + old_run_shell_line, "")
+for pat in stale_patterns:
+    text = text.replace(pat + "\n", "")
+    text = text.replace("\n" + pat, "")
 tpm_line = "run '~/.config/tmux/plugins/tpm/tpm'"
 if tpm_line in text:
     text = text.replace(tpm_line, f"{tpm_line}\n{line}", 1)
