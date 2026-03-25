@@ -133,8 +133,6 @@ Set options with `set -g` in your tmux config.
 set -g @tmux_sidebar_width 30      # default: 25
 ```
 
-`TMUX_SIDEBAR_WIDTH` overrides this if set.
-
 ### Focus on open
 
 By default, toggling the sidebar focuses it. Disable that behavior to keep
@@ -283,7 +281,6 @@ set -g @tmux_sidebar_install_agent_hooks 1   # default: 0
 
 | Environment variable     | Description                                                                                    |
 | ------------------------ | ---------------------------------------------------------------------------------------------- |
-| `TMUX_SIDEBAR_WIDTH`     | Overrides `@tmux_sidebar_width`                                                                |
 | `TMUX_SIDEBAR_STATE_DIR` | State file directory (default `$XDG_STATE_HOME/tmux-sidebar` or `~/.local/state/tmux-sidebar`) |
 
 ## Hook Integration

@@ -311,7 +311,7 @@ case "$output" in
 esac
 
 rm -f "$TEST_TMUX_DATA_DIR/option__tmux_sidebar_width.txt"
-export TMUX_SIDEBAR_WIDTH=''
+export TMUX_SIDEBAR_WIDTH='41'
 python_width="$(
 python3 - <<'PY'
 import importlib.util

@@ -14,10 +14,12 @@ assert_file_contains "$TEST_TMUX_DATA_DIR/commands.log" 'split-window -t %1 -h -
 fake_tmux_no_sidebar
 fake_tmux_register_pane "%1" "work" "@1" "editor" "nvim"
 printf '1\n' > "$TEST_TMUX_DATA_DIR/option__tmux_sidebar_enabled.txt"
+export TMUX_SIDEBAR_WIDTH='41'
 
 bash scripts/features/sidebar/ensure-sidebar-pane.sh
 
 assert_file_contains "$TEST_TMUX_DATA_DIR/commands.log" 'split-window -t %1 -h -b -d -f -l 25'
+unset TMUX_SIDEBAR_WIDTH
 assert_file_contains "$TEST_TMUX_DATA_DIR/commands.log" 'select-pane -t %99 -T Sidebar'
 assert_file_contains "$TEST_TMUX_DATA_DIR/commands.log" 'set-option -p -t %99 allow-set-title off'
 assert_eq "$(fake_tmux_current_pane)" "%1"

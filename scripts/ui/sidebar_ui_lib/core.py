@@ -73,7 +73,6 @@ def configured_scrolloff() -> int:
 
 def configured_sidebar_width() -> int:
     for raw_width in (
-        os.environ.get("TMUX_SIDEBAR_WIDTH", ""),
         tmux_option("@tmux_sidebar_width"),
         str(DEFAULT_SIDEBAR_WIDTH),
     ):
