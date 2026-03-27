@@ -1,1 +1,3 @@
-source-file -F "#{d:current_file}/tmux-pane-tree.tmux"
+#!/usr/bin/env bash
+CURRENT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+tmux source-file "$CURRENT_DIR/tmux-pane-tree.tmux"
