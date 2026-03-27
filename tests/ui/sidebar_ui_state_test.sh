@@ -354,9 +354,21 @@ work|@1|editor|%63|htop|htop|0
 work|@1|editor|%64|bpytop|bpytop|0
 work|@1|editor|%65|python3|assistant runner|0
 work|@1|editor|%66|lazygit|lazygit|0
+work|@1|editor|%67|python3|assistant runner|0
+work|@1|editor|%68|python3|assistant runner|0
+work|@1|editor|%69|python3|assistant runner|0
 EOF
 cat > "$TMUX_SIDEBAR_STATE_DIR/pane-%65.json" <<'EOF'
 {"pane_id":"%65","app":"claude","status":"running","updated_at":100}
+EOF
+cat > "$TMUX_SIDEBAR_STATE_DIR/pane-%67.json" <<'EOF'
+{"pane_id":"%67","app":"claude","status":"needs-input","updated_at":100}
+EOF
+cat > "$TMUX_SIDEBAR_STATE_DIR/pane-%68.json" <<'EOF'
+{"pane_id":"%68","app":"claude","status":"done","updated_at":100}
+EOF
+cat > "$TMUX_SIDEBAR_STATE_DIR/pane-%69.json" <<'EOF'
+{"pane_id":"%69","app":"claude","status":"error","updated_at":100}
 EOF
 mkdir -p "$TEST_TMP/fonts/NerdFonts"
 touch "$TEST_TMP/fonts/NerdFonts/JetBrainsMono Nerd Font Mono.ttf"
@@ -370,7 +382,10 @@ assert_contains "$output" '󰄛 cat'
 assert_contains "$output" '󱔓 htop'
 assert_contains "$output" '󱔓 bpytop'
 assert_contains "$output" '󰊢 lazygit'
-assert_contains "$output" '󰵰 claude ⏳'
+assert_contains "$output" '󰵰 claude '
+assert_contains "$output" '󰵰 claude '
+assert_contains "$output" '󰵰 claude '
+assert_contains "$output" '󰵰 claude '
 export TMUX_SIDEBAR_FONT_DIRS="$TEST_TMP/no-fonts"
 
 fake_tmux_set_tree <<'EOF'

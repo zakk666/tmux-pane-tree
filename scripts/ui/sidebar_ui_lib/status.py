@@ -5,6 +5,16 @@ import re
 from pathlib import Path
 
 from .core import run_tmux, tmux_option
+from .icon_config import (
+    APP_ALIASES,
+    ASCII_ICONS,
+    DEFAULT_BADGES,
+    FONT_DIRS_ENV,
+    FONT_FILE_SUFFIXES,
+    ICON_THEMES,
+    ICON_THEME_OPTION,
+    NERD_FONT_BADGES,
+)
 
 
 SEMVER_PATTERN = re.compile(r"^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$")
@@ -28,142 +38,12 @@ NON_AGENT_COMMANDS = {
     "yazi",
     "zsh",
 }
-DEFAULT_BADGES: dict[str, str] = {
-    "running": "⏳",
-    "needs-input": "❓",
-    "done": "✅",
-    "error": "❌",
-}
-ASCII_ICONS: dict[str, str] = {
-    "claude": "C",
-    "codex": "X",
-    "opencode": "O",
-    "cursor": "U",
-    "shell": "$",
-    "node": "N",
-    "python": "P",
-    "git": "G",
-    "lazygit": "G",
-    "yazi": "Y",
-    "ranger": "R",
-    "bb": "B",
-    "cat": "c",
-    "clojure": "L",
-    "java": "J",
-    "less": ":",
-    "vim": "V",
-    "ssh": "@",
-    "pager": ":",
-    "top": "%",
-    "tmux": "T",
-    "unknown": "?",
-}
-UNICODE_ICONS: dict[str, str] = {
-    "claude": "◎",
-    "codex": "⌘",
-    "opencode": "◌",
-    "cursor": "▣",
-    "shell": "›",
-    "node": "⬢",
-    "python": "¶",
-    "git": "⎇",
-    "lazygit": "⎇",
-    "yazi": "▤",
-    "ranger": "▥",
-    "bb": "β",
-    "cat": "⌂",
-    "clojure": "λ",
-    "java": "♨",
-    "less": "↕",
-    "vim": "◇",
-    "ssh": "↗",
-    "pager": "↕",
-    "top": "▦",
-    "tmux": "⊞",
-    "unknown": "·",
-}
-NERD_FONT_ICONS: dict[str, str] = {
-    "claude": "\U000f0d70",
-    "codex": "\U000f0d70",
-    "opencode": "\U000f0d70",
-    "cursor": "\U000f0d70",
-    "shell": "\U000f016c",
-    "node": "\ue719",
-    "python": "\ue73c",
-    "git": "\ue702",
-    "lazygit": "\U000f02a2",
-    "yazi": "\U000f024b",
-    "ranger": "\ueb86",
-    "bb": "\ue768",
-    "cat": "\U000f011b",
-    "clojure": "\ue768",
-    "java": "\ue738",
-    "less": "\ue758",
-    "vim": "\ue7c5",
-    "ssh": "\ue8b1",
-    "pager": "\ueb2f",
-    "top": "\U000f1513",
-    "tmux": "\uebc8",
-    "unknown": "\ueb32",
-}
-ICON_THEMES: dict[str, dict[str, str]] = {
-    "ascii": ASCII_ICONS,
-    "nerdfont": NERD_FONT_ICONS,
-    "unicode": UNICODE_ICONS,
-}
-APP_ALIASES: dict[str, str] = {
-    "ash": "shell",
-    "bash": "shell",
-    "dash": "shell",
-    "elvish": "shell",
-    "fish": "shell",
-    "ksh": "shell",
-    "nu": "shell",
-    "sh": "shell",
-    "xonsh": "shell",
-    "zsh": "shell",
-    "node": "node",
-    "nodejs": "node",
-    "python": "python",
-    "python2": "python",
-    "python3": "python",
-    "git": "git",
-    "lazygit": "lazygit",
-    "yazi": "yazi",
-    "ranger": "ranger",
-    "bb": "bb",
-    "babashka": "bb",
-    "cat": "cat",
-    "clj": "clojure",
-    "clojure": "clojure",
-    "java": "java",
-    "less": "less",
-    "vi": "vim",
-    "vim": "vim",
-    "nvim": "vim",
-    "view": "vim",
-    "ssh": "ssh",
-    "mosh": "ssh",
-    "mosh-client": "ssh",
-    "more": "pager",
-    "most": "pager",
-    "tail": "pager",
-    "atop": "top",
-    "bpytop": "top",
-    "btop": "top",
-    "htop": "top",
-    "top": "top",
-    "tmux": "tmux",
-}
 BADGE_OPTIONS: dict[str, str] = {
     "running": "@tmux_sidebar_badge_running",
     "needs-input": "@tmux_sidebar_badge_needs_input",
     "done": "@tmux_sidebar_badge_done",
     "error": "@tmux_sidebar_badge_error",
 }
-ICON_THEME_OPTION = "@tmux_sidebar_icon_theme"
-FONT_DIRS_ENV = "TMUX_SIDEBAR_FONT_DIRS"
-FONT_FILE_SUFFIXES = {".otf", ".otc", ".ttc", ".ttf"}
 
 _badge_cache: dict[str, str] | None = None
 _icon_cache: dict[str, str] | None = None
@@ -174,7 +54,7 @@ def configured_badges() -> dict[str, str]:
     global _badge_cache
     if _badge_cache is not None:
         return _badge_cache
-    badges = dict(DEFAULT_BADGES)
+    badges = dict(NERD_FONT_BADGES if configured_icon_theme() == "nerdfont" else DEFAULT_BADGES)
     for status, option in BADGE_OPTIONS.items():
         custom = tmux_option(option)
         if custom:

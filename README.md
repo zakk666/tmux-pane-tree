@@ -209,13 +209,18 @@ set -g @tmux_sidebar_hide_panes on     # default: off
 
 ### Badge icons
 
-Override the default status badges:
+Badges follow the active icon theme. The default `ascii` and `unicode` paths
+use `⏳`, `❓`, `✅`, and `❌`. When the active icon theme resolves to
+`nerdfont`, badges switch to `nf-fa-hourglass_2`, `nf-fa-circle_question`,
+`nf-fa-circle_check`, and `nf-oct-stop`.
+
+You can still override any status badge explicitly:
 
 ```tmux
-set -g @tmux_sidebar_badge_running      "⏳"   # default: ⏳
-set -g @tmux_sidebar_badge_needs_input  "❓"   # default: ❓
-set -g @tmux_sidebar_badge_done         "✅"   # default: ✅
-set -g @tmux_sidebar_badge_error        "❌"   # default: ❌
+set -g @tmux_sidebar_badge_running      "⏳"
+set -g @tmux_sidebar_badge_needs_input  "❓"
+set -g @tmux_sidebar_badge_done         "✅"
+set -g @tmux_sidebar_badge_error        "❌"
 ```
 
 ### Pane icons
