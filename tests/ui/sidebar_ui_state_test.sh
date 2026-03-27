@@ -324,6 +324,28 @@ assert_contains "$output" 'J java'
 assert_contains "$output" '? mytool'
 
 fake_tmux_set_tree <<'EOF'
+work|@1|editor|%49|bash|bash|1
+work|@1|editor|%50|python3|assistant runner|0
+EOF
+cat > "$TMUX_SIDEBAR_STATE_DIR/pane-%50.json" <<'EOF'
+{"pane_id":"%50","app":"claude","status":"running","updated_at":100}
+EOF
+printf 'unicode\n' > "$TEST_TMUX_DATA_DIR/option__tmux_sidebar_icon_theme.txt"
+
+output="$(python3 scripts/ui/sidebar-ui.py --dump-render 2>&1)"
+
+assert_contains "$output" '› bash'
+assert_contains "$output" '◎ claude ⏳'
+
+printf 's\n' > "$TEST_TMUX_DATA_DIR/option__tmux_sidebar_icon_shell.txt"
+
+output="$(python3 scripts/ui/sidebar-ui.py --dump-render 2>&1)"
+
+assert_contains "$output" 's bash'
+rm -f "$TEST_TMUX_DATA_DIR/option__tmux_sidebar_icon_theme.txt" \
+  "$TEST_TMUX_DATA_DIR/option__tmux_sidebar_icon_shell.txt"
+
+fake_tmux_set_tree <<'EOF'
 work|@1|editor|%2|superlongpanecommand|superlongpanecommand|1
 EOF
 printf '14\n' > "$TEST_TMUX_DATA_DIR/option__tmux_sidebar_width.txt"
@@ -390,9 +412,7 @@ EOF
 output="$(python3 scripts/ui/sidebar-ui.py --dump-render 2>&1)"
 
 assert_contains "$output" '└─ myproject'
-case "$output" in
-  *'├─ claude'* | *'└─ claude'*'├─'* ) ;;
-esac
+assert_contains "$output" 'C claude ⏳'
 
 fake_tmux_set_tree <<'EOF'
 work|@1|2.1.76|%25|2.1.76|2.1.76|1

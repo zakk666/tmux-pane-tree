@@ -32,7 +32,7 @@ DEFAULT_BADGES: dict[str, str] = {
     "done": "✅",
     "error": "❌",
 }
-DEFAULT_ICONS: dict[str, str] = {
+ASCII_ICONS: dict[str, str] = {
     "claude": "C",
     "codex": "X",
     "opencode": "O",
@@ -53,6 +53,32 @@ DEFAULT_ICONS: dict[str, str] = {
     "top": "%",
     "tmux": "T",
     "unknown": "?",
+}
+UNICODE_ICONS: dict[str, str] = {
+    "claude": "◎",
+    "codex": "⌘",
+    "opencode": "◌",
+    "cursor": "▣",
+    "shell": "›",
+    "node": "⬢",
+    "python": "¶",
+    "git": "⎇",
+    "lazygit": "⎇",
+    "yazi": "▤",
+    "ranger": "▥",
+    "bb": "β",
+    "clojure": "λ",
+    "java": "♨",
+    "vim": "◇",
+    "ssh": "↗",
+    "pager": "↕",
+    "top": "▦",
+    "tmux": "⊞",
+    "unknown": "·",
+}
+ICON_THEMES: dict[str, dict[str, str]] = {
+    "ascii": ASCII_ICONS,
+    "unicode": UNICODE_ICONS,
 }
 APP_ALIASES: dict[str, str] = {
     "ash": "shell",
@@ -102,8 +128,10 @@ BADGE_OPTIONS: dict[str, str] = {
     "done": "@tmux_sidebar_badge_done",
     "error": "@tmux_sidebar_badge_error",
 }
+ICON_THEME_OPTION = "@tmux_sidebar_icon_theme"
 
 _badge_cache: dict[str, str] | None = None
+_icon_cache: dict[str, str] | None = None
 
 
 def configured_badges() -> dict[str, str]:
@@ -123,8 +151,22 @@ def badge_for_status(status: str) -> str:
     return configured_badges().get(status, "")
 
 
+def configured_icons() -> dict[str, str]:
+    global _icon_cache
+    if _icon_cache is not None:
+        return _icon_cache
+    theme_name = tmux_option(ICON_THEME_OPTION).strip().lower() or "ascii"
+    icons = dict(ICON_THEMES.get(theme_name, ASCII_ICONS))
+    for app in icons:
+        custom = tmux_option(f"@tmux_sidebar_icon_{app}")
+        if custom:
+            icons[app] = custom
+    _icon_cache = icons
+    return icons
+
+
 def icon_for_app(app: str) -> str:
-    return DEFAULT_ICONS.get(app, "")
+    return configured_icons().get(app, "")
 
 
 def normalize_token(value: str) -> str:

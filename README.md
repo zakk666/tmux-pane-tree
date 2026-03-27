@@ -32,7 +32,7 @@ side of every window, with live badges for `claude`, `codex`, `cursor`, and `ope
 **Interactive tree** — browse sessions, windows, and panes as a Unicode tree.
 Press `Enter` to jump to the selected pane.
 
-**Agent badges** — per-pane status updates in real time:
+**Pane icons and agent badges** — per-pane app icons and live status updates in real time:
 
 | Badge | Status      | Meaning                        |
 | :---: | ----------- | ------------------------------ |
@@ -218,6 +218,33 @@ set -g @tmux_sidebar_badge_done         "✅"   # default: ✅
 set -g @tmux_sidebar_badge_error        "❌"   # default: ❌
 ```
 
+### Pane icons
+
+Pane icons default to an ASCII-safe theme so they render cleanly on most
+systems and fit in the sidebar's narrow default width.
+
+```tmux
+set -g @tmux_sidebar_icon_theme "ascii"   # default: ascii
+set -g @tmux_sidebar_icon_theme "unicode" # optional richer built-in theme
+```
+
+Known panes such as shells, coding agents, `node`, `lazygit`, `yazi`,
+`ranger`, `bb`, `clojure`, `java`, `vim`, `ssh`, pagers, and tmux get
+built-in icons. Unknown commands fall back to a placeholder icon.
+
+You can override any individual app icon:
+
+```tmux
+set -g @tmux_sidebar_icon_claude "A"
+set -g @tmux_sidebar_icon_shell  ">"
+set -g @tmux_sidebar_icon_unknown "?"
+```
+
+Available override keys match the canonical app ids:
+`claude`, `codex`, `opencode`, `cursor`, `shell`, `node`, `python`, `git`,
+`lazygit`, `yazi`, `ranger`, `bb`, `clojure`, `java`, `vim`, `ssh`, `pager`,
+`top`, `tmux`, and `unknown`.
+
 ### Colors
 
 Override tree colors:
@@ -272,6 +299,7 @@ set -g @tmux_sidebar_install_agent_hooks 1   # default: 0
 | `@tmux_sidebar_badge_needs_input`     |  `❓`   | Badge for needs-input status     |
 | `@tmux_sidebar_badge_done`            |  `✅`   | Badge for done status            |
 | `@tmux_sidebar_badge_error`           |  `❌`   | Badge for error status           |
+| `@tmux_sidebar_icon_theme`            | `ascii` | Built-in pane icon theme         |
 | `@tmux_sidebar_color_session`         |    —    | Session name color (hex)         |
 | `@tmux_sidebar_color_window`          |    —    | Window name color (hex)          |
 | `@tmux_sidebar_color_pane`            |    —    | Pane name color (hex)            |

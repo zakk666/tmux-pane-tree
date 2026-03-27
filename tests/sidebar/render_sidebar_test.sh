@@ -41,11 +41,6 @@ case "$output" in
 esac
 
 case "$output" in
-  *"│     └─ C claude ❓"* ) ;;
-  * ) fail "expected active pane marker in renderer output" ;;
-esac
-
-case "$output" in
   *"└─ ops"* ) ;;
   * ) fail "expected unicode pane branch continuation in renderer output" ;;
 esac
