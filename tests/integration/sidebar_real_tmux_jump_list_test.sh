@@ -46,15 +46,15 @@ real_tmux run-shell -b "$ensure_sidebar_cmd"
 sidebar_pane_id="$(real_tmux_wait_for_sidebar_pane "$main_window_id")"
 initial_capture="$(real_tmux_wait_for_capture "$sidebar_pane_id" 'tailing')"
 main_pane_command="$(real_tmux display-message -p -t "$main_pane_id" '#{pane_current_command}')"
-assert_contains "$initial_capture" "▶ │     └─ $main_pane_command"
+assert_contains "$initial_capture" "▶ │     └─ \$ $main_pane_command"
 
 real_tmux select-pane -t "$sidebar_pane_id"
 assert_eq "$(real_tmux display-message -p -t "$sidebar_pane_id" '#{pane_active}')" "1"
 
 real_tmux send-keys -t "$sidebar_pane_id" G
-bottom_capture="$(wait_for_selected_capture "$sidebar_pane_id" '▶       └─ tail')"
+bottom_capture="$(wait_for_selected_capture "$sidebar_pane_id" '▶       └─ : tail')"
 assert_contains "$bottom_capture" 'tailing'
 
 real_tmux send-keys -t "$sidebar_pane_id" g g
-top_capture="$(wait_for_selected_capture "$sidebar_pane_id" '▶ │     └─ cat')"
+top_capture="$(wait_for_selected_capture "$sidebar_pane_id" '▶ │     └─ c cat')"
 assert_contains "$top_capture" 'ops'

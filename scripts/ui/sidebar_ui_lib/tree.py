@@ -5,7 +5,7 @@ import subprocess
 from collections import OrderedDict
 
 from .core import STATE_DIR, SIDEBAR_TITLES, configured_sidebar_width, run_tmux, tmux_option
-from .status import badge_for_status, effective_pane_status, live_agent_app, normalize_token, pane_display_label, window_display_name
+from .status import badge_for_status, effective_pane_status, live_agent_app, normalize_token, pane_display_label, pane_icon, window_display_name
 
 
 def ordered_sessions(sessions: OrderedDict[str, dict]) -> list[dict]:
@@ -165,6 +165,9 @@ def load_tree() -> list[dict]:
                 pane_state = pane_states.get(pane["id"], {})
                 badge = badge_for_status(effective_pane_status(pane["id"], pane["label"], pane["title"], pane_state))
                 label = pane_display_label(pane["label"], pane["title"], pane_state)
+                icon = pane_icon(pane["label"], pane["title"], pane_state)
+                if icon:
+                    label = f"{icon} {label}"
                 if badge:
                     label = f"{label} {badge}"
                 rows.append(

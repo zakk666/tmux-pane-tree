@@ -32,7 +32,7 @@ side of every window, with live badges for `claude`, `codex`, `cursor`, and `ope
 **Interactive tree** — browse sessions, windows, and panes as a Unicode tree.
 Press `Enter` to jump to the selected pane.
 
-**Agent badges** — per-pane status updates in real time:
+**Pane icons and agent badges** — per-pane app icons and live status updates in real time:
 
 | Badge | Status      | Meaning                        |
 | :---: | ----------- | ------------------------------ |
@@ -209,14 +209,66 @@ set -g @tmux_sidebar_hide_panes on     # default: off
 
 ### Badge icons
 
-Override the default status badges:
+Badges follow the active icon theme. The default `ascii` and `unicode` paths
+use `⏳`, `❓`, `✅`, and `❌`. When the active icon theme resolves to
+`nerdfont`, badges switch to `nf-fa-hourglass_2`, `nf-fa-circle_question`,
+`nf-fa-circle_check`, and `nf-oct-stop`.
+
+You can still override any status badge explicitly:
 
 ```tmux
-set -g @tmux_sidebar_badge_running      "⏳"   # default: ⏳
-set -g @tmux_sidebar_badge_needs_input  "❓"   # default: ❓
-set -g @tmux_sidebar_badge_done         "✅"   # default: ✅
-set -g @tmux_sidebar_badge_error        "❌"   # default: ❌
+set -g @tmux_sidebar_badge_running      "⏳"
+set -g @tmux_sidebar_badge_needs_input  "❓"
+set -g @tmux_sidebar_badge_done         "✅"
+set -g @tmux_sidebar_badge_error        "❌"
 ```
+
+### Pane icons
+
+Pane icons default to `auto`, which checks whether the tmux host has a Nerd
+Font installed in a standard font directory. If it finds one, the sidebar uses
+the Nerd Font icon theme. Otherwise it falls back to the ASCII-safe theme so it
+still renders cleanly on most systems and fits in the sidebar's narrow default
+width.
+
+```tmux
+set -g @tmux_sidebar_icon_theme "auto"    # default: auto
+set -g @tmux_sidebar_icon_theme "ascii"   # force ASCII-safe icons
+set -g @tmux_sidebar_icon_theme "unicode" # optional richer built-in theme
+set -g @tmux_sidebar_icon_theme "nerdfont" # force Nerd Font glyphs
+```
+
+Known panes such as shells, coding agents, `node`, `lazygit`, `yazi`,
+`ranger`, `bb`, `clojure`, `java`, `vim`, `ssh`, pagers, and tmux get
+built-in icons. Unknown commands fall back to a placeholder icon.
+
+The built-in Nerd Font theme uses glyphs such as `nf-md-face_agent` for coding
+agents, `nf-md-code_greater_than` for shells, `nf-dev-less` for `less`,
+`nf-md-cat` for `cat`, `nf-md-dock_top` for `top`-style monitors, and
+`nf-md-git` for `lazygit`.
+
+You can override any individual app icon:
+
+```tmux
+set -g @tmux_sidebar_icon_claude "A"
+set -g @tmux_sidebar_icon_shell  ">"
+set -g @tmux_sidebar_icon_unknown "?"
+```
+
+Available override keys match the canonical app ids:
+`claude`, `codex`, `opencode`, `cursor`, `shell`, `node`, `python`, `git`,
+`lazygit`, `yazi`, `ranger`, `bb`, `cat`, `clojure`, `java`, `less`, `vim`,
+`ssh`, `pager`, `top`, `tmux`, and `unknown`.
+
+Installed Nerd Fonts are only a hint. If your terminal is not actually using a
+Nerd Font, the Nerd Font glyphs will not render correctly. In that case, either
+switch your terminal font to a Nerd Font or set `@tmux_sidebar_icon_theme` to
+`ascii` or `unicode` explicitly.
+
+If auto-detection picks the wrong theme, set `@tmux_sidebar_icon_theme`
+explicitly. Remote tmux sessions are especially likely to need an explicit
+setting because `auto` checks fonts installed on the tmux host, not the font
+configured by the terminal client displaying that session.
 
 ### Colors
 
@@ -272,6 +324,7 @@ set -g @tmux_sidebar_install_agent_hooks 1   # default: 0
 | `@tmux_sidebar_badge_needs_input`     |  `❓`   | Badge for needs-input status     |
 | `@tmux_sidebar_badge_done`            |  `✅`   | Badge for done status            |
 | `@tmux_sidebar_badge_error`           |  `❌`   | Badge for error status           |
+| `@tmux_sidebar_icon_theme`            | `auto`  | Pane icon theme / auto-detect    |
 | `@tmux_sidebar_color_session`         |    —    | Session name color (hex)         |
 | `@tmux_sidebar_color_window`          |    —    | Window name color (hex)          |
 | `@tmux_sidebar_color_pane`            |    —    | Pane name color (hex)            |

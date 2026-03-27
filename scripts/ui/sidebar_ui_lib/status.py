@@ -1,8 +1,20 @@
 from __future__ import annotations
 
+import os
 import re
+from pathlib import Path
 
 from .core import run_tmux, tmux_option
+from .icon_config import (
+    APP_ALIASES,
+    ASCII_ICONS,
+    DEFAULT_BADGES,
+    FONT_DIRS_ENV,
+    FONT_FILE_SUFFIXES,
+    ICON_THEMES,
+    ICON_THEME_OPTION,
+    NERD_FONT_BADGES,
+)
 
 
 SEMVER_PATTERN = re.compile(r"^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$")
@@ -26,12 +38,6 @@ NON_AGENT_COMMANDS = {
     "yazi",
     "zsh",
 }
-DEFAULT_BADGES: dict[str, str] = {
-    "running": "⏳",
-    "needs-input": "❓",
-    "done": "✅",
-    "error": "❌",
-}
 BADGE_OPTIONS: dict[str, str] = {
     "running": "@tmux_sidebar_badge_running",
     "needs-input": "@tmux_sidebar_badge_needs_input",
@@ -40,13 +46,15 @@ BADGE_OPTIONS: dict[str, str] = {
 }
 
 _badge_cache: dict[str, str] | None = None
+_icon_cache: dict[str, str] | None = None
+_nerd_font_installed_cache: bool | None = None
 
 
 def configured_badges() -> dict[str, str]:
     global _badge_cache
     if _badge_cache is not None:
         return _badge_cache
-    badges = dict(DEFAULT_BADGES)
+    badges = dict(NERD_FONT_BADGES if configured_icon_theme() == "nerdfont" else DEFAULT_BADGES)
     for status, option in BADGE_OPTIONS.items():
         custom = tmux_option(option)
         if custom:
@@ -57,6 +65,79 @@ def configured_badges() -> dict[str, str]:
 
 def badge_for_status(status: str) -> str:
     return configured_badges().get(status, "")
+
+
+def font_search_paths() -> tuple[Path, ...]:
+    override = os.environ.get(FONT_DIRS_ENV)
+    if override is not None:
+        return tuple(Path(path).expanduser() for path in override.split(os.pathsep) if path)
+    home = Path.home()
+    xdg_data_home = Path(os.environ.get("XDG_DATA_HOME", str(home / ".local" / "share")))
+    return (
+        home / "Library" / "Fonts",
+        Path("/Library/Fonts"),
+        Path("/System/Library/Fonts"),
+        xdg_data_home / "fonts",
+        home / ".fonts",
+        Path("/usr/local/share/fonts"),
+        Path("/usr/share/fonts"),
+    )
+
+
+def is_nerd_font_file(path: Path) -> bool:
+    return path.suffix.lower() in FONT_FILE_SUFFIXES and bool(re.search(r"nerd\s*font", path.name, re.IGNORECASE))
+
+
+def nerd_font_installed() -> bool:
+    global _nerd_font_installed_cache
+    if _nerd_font_installed_cache is not None:
+        return _nerd_font_installed_cache
+    for root in font_search_paths():
+        try:
+            if root.is_file():
+                if is_nerd_font_file(root):
+                    _nerd_font_installed_cache = True
+                    return True
+                continue
+            candidates = root.rglob("*")
+        except OSError:
+            continue
+        for candidate in candidates:
+            try:
+                if candidate.is_file() and is_nerd_font_file(candidate):
+                    _nerd_font_installed_cache = True
+                    return True
+            except OSError:
+                continue
+    _nerd_font_installed_cache = False
+    return False
+
+
+def configured_icon_theme() -> str:
+    theme_name = tmux_option(ICON_THEME_OPTION).strip().lower()
+    if theme_name and theme_name != "auto":
+        return theme_name
+    if nerd_font_installed():
+        return "nerdfont"
+    return "ascii"
+
+
+def configured_icons() -> dict[str, str]:
+    global _icon_cache
+    if _icon_cache is not None:
+        return _icon_cache
+    theme_name = configured_icon_theme()
+    icons = dict(ICON_THEMES.get(theme_name, ASCII_ICONS))
+    for app in icons:
+        custom = tmux_option(f"@tmux_sidebar_icon_{app}")
+        if custom:
+            icons[app] = custom
+    _icon_cache = icons
+    return icons
+
+
+def icon_for_app(app: str) -> str:
+    return configured_icons().get(app, "")
 
 
 def normalize_token(value: str) -> str:
@@ -142,6 +223,23 @@ def live_agent_app(command: str, title: str, state: dict | None) -> str:
     return state_agent_app(command, title, state)
 
 
+def canonical_pane_app(command: str, title: str, state: dict | None) -> str:
+    live_app = live_agent_app(command, title, state)
+    if live_app:
+        return live_app
+    command_token = normalize_token(command)
+    if command_token in APP_ALIASES:
+        return APP_ALIASES[command_token]
+    title_token = normalize_token(title)
+    if title_token in APP_ALIASES:
+        return APP_ALIASES[title_token]
+    if command_token.startswith("python"):
+        return "python"
+    if command_token:
+        return "unknown"
+    return ""
+
+
 def codex_terminal_status(pane_id: str) -> str:
     if not pane_id:
         return ""
@@ -183,6 +281,10 @@ def pane_display_label(command: str, title: str, state: dict | None) -> str:
     if live_app:
         return live_app
     return command
+
+
+def pane_icon(command: str, title: str, state: dict | None) -> str:
+    return icon_for_app(canonical_pane_app(command, title, state))
 
 
 def auto_window_name(window_name: str, panes: list[dict]) -> bool:

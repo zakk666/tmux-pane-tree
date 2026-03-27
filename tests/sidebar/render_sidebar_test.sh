@@ -36,13 +36,8 @@ case "$output" in
 esac
 
 case "$output" in
-  *"│     └─ claude ❓"* ) ;;
+  *"│     └─ C claude ❓"* ) ;;
   * ) fail "expected needs-input badge in renderer output" ;;
-esac
-
-case "$output" in
-  *"│     └─ claude ❓"* ) ;;
-  * ) fail "expected active pane marker in renderer output" ;;
 esac
 
 case "$output" in
@@ -51,12 +46,12 @@ case "$output" in
 esac
 
 case "$output" in
-  *"        ├─ codex ✅"* ) ;;
+  *"        ├─ X codex ✅"* ) ;;
   * ) fail "expected done badge in renderer output" ;;
 esac
 
 case "$output" in
-  *"        └─ codex ⏳"* ) ;;
+  *"        └─ X codex ⏳"* ) ;;
   * ) fail "expected running badge in renderer output" ;;
 esac
 
