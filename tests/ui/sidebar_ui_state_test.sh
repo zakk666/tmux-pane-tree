@@ -353,6 +353,7 @@ work|@1|editor|%62|cat|cat|0
 work|@1|editor|%63|htop|htop|0
 work|@1|editor|%64|bpytop|bpytop|0
 work|@1|editor|%65|python3|assistant runner|0
+work|@1|editor|%66|lazygit|lazygit|0
 EOF
 cat > "$TMUX_SIDEBAR_STATE_DIR/pane-%65.json" <<'EOF'
 {"pane_id":"%65","app":"claude","status":"running","updated_at":100}
@@ -369,6 +370,7 @@ assert_contains "$output" ' less'
 assert_contains "$output" '󰄛 cat'
 assert_contains "$output" '󱔓 htop'
 assert_contains "$output" '󱔓 bpytop'
+assert_contains "$output" '󰊢 lazygit'
 assert_contains "$output" '󰵰 claude ⏳'
 export TMUX_SIDEBAR_GHOSTTY_CONFIG="$TEST_TMP/no-ghostty-config"
 

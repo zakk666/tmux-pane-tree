@@ -91,7 +91,7 @@ NERD_FONT_ICONS: dict[str, str] = {
     "node": "\ue719",
     "python": "\ue73c",
     "git": "\ue702",
-    "lazygit": "\ue8a9",
+    "lazygit": "\U000f02a2",
     "yazi": "\U000f024b",
     "ranger": "\ueb86",
     "bb": "\ue768",
