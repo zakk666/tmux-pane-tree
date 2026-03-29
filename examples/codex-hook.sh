@@ -5,7 +5,7 @@ SCRIPT_DIR="$(CDPATH= cd -- "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . "$SCRIPT_DIR/../scripts/core/lib.sh"
 
 # TMUX_PANE_TREE_PLUGIN_DIR overrides TMUX_SIDEBAR_PLUGIN_DIR; see scripts/core/lib.sh pane_tree_plugin_dir
-PLUGIN_DIR="$(pane_tree_plugin_dir "$HOME/.config/tmux/plugins/tmux-pane-tree")"
+PLUGIN_DIR="$(pane_tree_plugin_dir "$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)")"
 export CODEX_EVENT="${CODEX_EVENT:-}"
 export CODEX_STATUS="${CODEX_STATUS:-}"
 export CODEX_MESSAGE="${CODEX_MESSAGE:-}"

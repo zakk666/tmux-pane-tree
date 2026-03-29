@@ -4,7 +4,7 @@ import os
 import re
 from pathlib import Path
 
-from .core import run_tmux, tmux_option, tmux_option_value
+from .core import run_tmux, tmux_option_value
 from .icon_config import (
     APP_ALIASES,
     ASCII_ICONS,
@@ -12,7 +12,6 @@ from .icon_config import (
     FONT_DIRS_ENV,
     FONT_FILE_SUFFIXES,
     ICON_THEMES,
-    ICON_THEME_OPTION,
     NERD_FONT_BADGES,
 )
 
@@ -114,7 +113,7 @@ def nerd_font_installed() -> bool:
 
 
 def configured_icon_theme() -> str:
-    theme_name = tmux_option(ICON_THEME_OPTION).strip().lower()
+    theme_name = tmux_option_value("icon_theme").strip().lower()
     if theme_name and theme_name != "auto":
         return theme_name
     if nerd_font_installed():
@@ -129,7 +128,7 @@ def configured_icons() -> dict[str, str]:
     theme_name = configured_icon_theme()
     icons = dict(ICON_THEMES.get(theme_name, ASCII_ICONS))
     for app in icons:
-        custom = tmux_option(f"@tmux_sidebar_icon_{app}")
+        custom = tmux_option_value(f"icon_{app}")
         if custom:
             icons[app] = custom
     _icon_cache = icons

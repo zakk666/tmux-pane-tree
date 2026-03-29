@@ -345,6 +345,21 @@ assert_contains "$output" 's bash'
 rm -f "$TEST_TMUX_DATA_DIR/option__tmux_sidebar_icon_theme.txt" \
   "$TEST_TMUX_DATA_DIR/option__tmux_sidebar_icon_shell.txt"
 
+printf 'ascii\n' > "$TEST_TMUX_DATA_DIR/option__tmux_sidebar_icon_theme.txt"
+printf 'unicode\n' > "$TEST_TMUX_DATA_DIR/option__tmux_pane_tree_icon_theme.txt"
+printf 'l\n' > "$TEST_TMUX_DATA_DIR/option__tmux_sidebar_icon_shell.txt"
+printf 'n\n' > "$TEST_TMUX_DATA_DIR/option__tmux_pane_tree_icon_shell.txt"
+
+output="$(python3 scripts/ui/sidebar-ui.py --dump-render 2>&1)"
+
+assert_contains "$output" 'n bash'
+assert_contains "$output" '◎ claude ⏳'
+assert_not_contains "$output" 'l bash'
+rm -f "$TEST_TMUX_DATA_DIR/option__tmux_sidebar_icon_theme.txt" \
+  "$TEST_TMUX_DATA_DIR/option__tmux_pane_tree_icon_theme.txt" \
+  "$TEST_TMUX_DATA_DIR/option__tmux_sidebar_icon_shell.txt" \
+  "$TEST_TMUX_DATA_DIR/option__tmux_pane_tree_icon_shell.txt"
+
 fake_tmux_set_tree <<'EOF'
 work|@1|editor|%60|sh|sh|1
 work|@1|editor|%61|less|less|0
