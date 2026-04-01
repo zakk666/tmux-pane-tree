@@ -364,8 +364,9 @@ Custom integrations should report the current pane, usually via
 
 The sidebar suppresses subagent completion badges so only the main session's
 final completion is shown. Claude Code and Cursor rely on explicit subagent
-lifecycle hooks. Codex suppression is best-effort and depends on `session_id`
-plus `permission_mode` tagging from the `notify` payload. If Codex omits those
+lifecycle hooks. Codex suppression is best-effort: `permission_mode` tagging
+can suppress immediate delegate completions, and `session_id` enables later
+follow-up correlation for the same delegate session. If Codex omits those
 delegate markers, tmux-pane-tree keeps the completion badge because there is no
 stronger signal to suppress it.
 
