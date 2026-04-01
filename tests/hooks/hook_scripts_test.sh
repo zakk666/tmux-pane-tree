@@ -183,8 +183,8 @@ assert_file_contains "$TEST_HOOK_CAPTURE" '--status running'
 
 export TEST_HOOK_CAPTURE="$TEST_TMP/cursor-hook-subagent-start.txt"
 rm -f "$TEST_HOOK_CAPTURE"
-printf '%s' '{"hook_event_name":"subagentStart","workspace_roots":["/work/project"],"agent_message":"Delegating"}' | bash scripts/features/hooks/hook-cursor.sh || true
-assert_file_contains "$TEST_HOOK_CAPTURE" '--status running'
+printf '%s' '{"hook_event_name":"subagentStart","workspace_roots":["/work/project"],"agent_message":"Delegating"}' | bash scripts/features/hooks/hook-cursor.sh
+[ ! -f "$TEST_HOOK_CAPTURE" ] || fail "cursor subagent start should be suppressed"
 
 export TEST_HOOK_CAPTURE="$TEST_TMP/cursor-hook-subagent-stop.txt"
 rm -f "$TEST_HOOK_CAPTURE"
