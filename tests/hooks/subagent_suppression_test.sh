@@ -12,18 +12,74 @@ run_filter() {
   bash scripts/features/hooks/filter-agent-event.sh
 }
 
-assert_eq "suppress" "$(run_filter '{"app":"claude","event":"SubagentStop","session_id":"sub-1","explicit_subagent_event":true,"status":"done"}')"
+assert_eq "suppress" "$(run_filter '{"app":"claude","event":"SubagentStop","session_id":"sub-1","permission_mode":"","explicit_subagent_event":true,"delegate_session":false}')"
 assert_file_contains "$STATE_DIR/agent-hook-state.json" '"subagent_sessions":{"claude:sub-1":'
 assert_file_contains "$STATE_DIR/agent-hook-state.json" '"pending_parent_sessions":{}'
 
-assert_eq "suppress" "$(run_filter '{"app":"claude","event":"Stop","session_id":"sub-1","status":"done"}')"
+assert_eq "suppress" "$(run_filter '{"app":"claude","event":"Stop","session_id":"sub-1","permission_mode":"","explicit_subagent_event":false,"delegate_session":false}')"
 
-assert_eq "allow" "$(run_filter '{"app":"claude","event":"Stop","session_id":"main-1","status":"done"}')"
-assert_eq "allow" "$(run_filter '{"app":"claude","event":"PermissionRequest","session_id":"main-1","status":"needs-input"}')"
+assert_eq "allow" "$(run_filter '{"app":"claude","event":"Stop","session_id":"main-1","permission_mode":"","explicit_subagent_event":false,"delegate_session":false}')"
+assert_eq "allow" "$(run_filter '{"app":"claude","event":"PermissionRequest","session_id":"main-1","permission_mode":"","explicit_subagent_event":false,"delegate_session":false}')"
 
-assert_eq "allow" "$(run_filter '{"app":"codex","event":"agent-turn-start","session_id":"worker-1","delegate_session":true,"status":"running"}')"
+assert_eq "allow" "$(run_filter '{"app":"codex","event":"agent-turn-start","session_id":"worker-1","permission_mode":"delegate","explicit_subagent_event":false,"delegate_session":true}')"
 assert_file_contains "$STATE_DIR/agent-hook-state.json" '"subagent_sessions":{"claude:sub-1":'
 assert_file_contains "$STATE_DIR/agent-hook-state.json" '"codex:worker-1":'
 
-assert_eq "suppress" "$(run_filter '{"app":"codex","event":"agent-turn-complete","session_id":"worker-1","delegate_session":true,"status":"done"}')"
-assert_eq "suppress" "$(run_filter '{"app":"codex","event":"permission-request","session_id":"worker-1","delegate_session":true,"status":"needs-input"}')"
+assert_eq "suppress" "$(run_filter '{"app":"codex","event":"agent-turn-complete","session_id":"worker-1","permission_mode":"delegate","explicit_subagent_event":false,"delegate_session":true}')"
+assert_eq "suppress" "$(run_filter '{"app":"codex","event":"PermissionRequest","session_id":"worker-1","permission_mode":"delegate","explicit_subagent_event":false,"delegate_session":true}')"
+
+CONCURRENT_STATE_DIR="$TEST_TMP/concurrent-state"
+mkdir -p "$CONCURRENT_STATE_DIR"
+
+STATE_DIR="$CONCURRENT_STATE_DIR" python3 - <<'PY'
+from __future__ import annotations
+
+import json
+import os
+import subprocess
+import sys
+
+state_dir = os.environ["STATE_DIR"]
+payloads = [
+    {
+        "app": "codex",
+        "event": "agent-turn-start",
+        "session_id": f"worker-{index}",
+        "permission_mode": "delegate",
+        "explicit_subagent_event": False,
+        "delegate_session": True,
+    }
+    for index in range(8)
+]
+env = os.environ.copy()
+env["TMUX_PANE_TREE_STATE_DIR"] = state_dir
+procs = []
+for payload in payloads:
+    proc_env = env.copy()
+    proc_env["HOOK_METADATA_JSON"] = json.dumps(payload, separators=(",", ":"))
+    procs.append(
+        subprocess.Popen(
+            ["bash", "scripts/features/hooks/filter-agent-event.sh"],
+            env=proc_env,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+    )
+
+outputs = []
+for proc in procs:
+    stdout, stderr = proc.communicate()
+    if proc.returncode != 0:
+        sys.stderr.write(stdout)
+        sys.stderr.write(stderr)
+        sys.exit(proc.returncode)
+    outputs.append(stdout.strip())
+
+if any(output != "allow" for output in outputs):
+    sys.exit(f"unexpected filter outputs: {outputs!r}")
+PY
+
+for index in 0 1 2 3 4 5 6 7; do
+  assert_file_contains "$CONCURRENT_STATE_DIR/agent-hook-state.json" "\"codex:worker-$index\":"
+done
