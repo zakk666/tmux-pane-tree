@@ -22,17 +22,20 @@ run_filter_from_metadata() {
 }
 
 assert_eq "suppress" "$(run_filter '{"app":"claude","event":"SubagentStop","session_id":"sub-1","permission_mode":"","explicit_subagent_event":true,"delegate_session":false}')"
-assert_file_contains "$STATE_DIR/agent-hook-state.json" '"subagent_sessions":{"claude:sub-1":'
-assert_file_contains "$STATE_DIR/agent-hook-state.json" '"pending_parent_sessions":{}'
+[ ! -e "$STATE_DIR/agent-hook-state.json" ] || fail "explicit claude subagent lifecycle should not create tracked session state"
 
-assert_eq "suppress" "$(run_filter '{"app":"claude","event":"Stop","session_id":"sub-1","permission_mode":"","explicit_subagent_event":false,"delegate_session":false}')"
+assert_eq "allow" "$(run_filter '{"app":"claude","event":"Stop","session_id":"sub-1","permission_mode":"","explicit_subagent_event":false,"delegate_session":false}')"
+
+assert_eq "suppress" "$(run_filter '{"app":"claude","event":"SubagentStart","session_id":"shared-1","permission_mode":"","explicit_subagent_event":true,"delegate_session":false}')"
+assert_eq "suppress" "$(run_filter '{"app":"claude","event":"SubagentStop","session_id":"shared-1","permission_mode":"","explicit_subagent_event":true,"delegate_session":false}')"
+assert_eq "allow" "$(run_filter '{"app":"claude","event":"Stop","session_id":"shared-1","permission_mode":"","explicit_subagent_event":false,"delegate_session":false}')"
 
 assert_eq "allow" "$(run_filter '{"app":"claude","event":"Stop","session_id":"main-1","permission_mode":"","explicit_subagent_event":false,"delegate_session":false}')"
 assert_eq "allow" "$(run_filter '{"app":"claude","event":"PermissionRequest","session_id":"main-1","permission_mode":"","explicit_subagent_event":false,"delegate_session":false}')"
 
 assert_eq "allow" "$(run_filter '{"app":"codex","event":"agent-turn-start","session_id":"worker-1","permission_mode":"delegate","explicit_subagent_event":false,"delegate_session":true}')"
-assert_file_contains "$STATE_DIR/agent-hook-state.json" '"subagent_sessions":{"claude:sub-1":'
 assert_file_contains "$STATE_DIR/agent-hook-state.json" '"codex:worker-1":'
+assert_file_not_contains "$STATE_DIR/agent-hook-state.json" '"claude:sub-1":'
 
 assert_eq "suppress" "$(run_filter_from_metadata codex agent-turn-complete '{"session_id":"worker-2","permission_mode":"delegate","summary":"Finished task"}')"
 assert_file_contains "$STATE_DIR/agent-hook-state.json" '"codex:worker-2":'

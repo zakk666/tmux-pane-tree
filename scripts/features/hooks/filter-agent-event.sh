@@ -177,7 +177,10 @@ with with_locked_state(state_path):
     changed = prune_state(state, now)
     key = session_key(app, session_id)
     tracked_session = bool(key) and key in state["subagent_sessions"]
-    should_store = bool(key) and (explicit_subagent_event or delegate_session or tracked_session)
+    # Explicit Claude/Cursor subagent lifecycle hooks are emitted on the
+    # delegator session, so suppress the lifecycle event itself without
+    # permanently tagging that session as a subagent.
+    should_store = bool(key) and (delegate_session or tracked_session)
     should_suppress = explicit_subagent_event or (
         event_kind in {"done", "needs-input"} and (delegate_session or tracked_session)
     )
