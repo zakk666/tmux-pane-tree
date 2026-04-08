@@ -217,7 +217,7 @@ clear_terminal_pane_state() {
   local status state_dir tmp_file
   status="$(json_get_string "$state_file" "status")"
   case "$status" in
-    needs-input|done)
+    needs-input)
       state_dir="$(dirname "$state_file")"
       tmp_file="$(mktemp "$state_dir/.pane-state.XXXXXX")"
       sed 's/"status":"[^"]*"/"status":"idle"/' "$state_file" > "$tmp_file"

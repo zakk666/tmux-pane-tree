@@ -19,8 +19,11 @@ COLOR_PAIR_HIGHLIGHT = 4
 COLOR_PAIR_SESSION_HL = 5
 COLOR_PAIR_WINDOW_HL = 6
 COLOR_PAIR_PANE_HL = 7
+COLOR_PAIR_ALERT = 8
+COLOR_PAIR_ALERT_HL = 9
 DEFAULT_COLOR_FG = "ffffff"
 DEFAULT_HIGHLIGHT_BG = "2d2d2d"
+DEFAULT_ALERT_FG = "e06c75"
 _HEX_COLOR_RE = re.compile(r"#([0-9a-fA-F]{6})")
 _CUBE_VALUES = [0, 95, 135, 175, 215, 255]
 _last_row_map_json = ""
@@ -157,8 +160,8 @@ def _parse_border_format_colors() -> dict[str, str]:
     return colors
 
 
-def init_sidebar_colors() -> tuple[int, int, int, int, int, int, int, int]:
-    _no_color = (curses.A_BOLD, 0, 0, 0, 0, 0, 0, 0)
+def init_sidebar_colors() -> tuple[int, int, int, int, int, int, int, int, int, int]:
+    _no_color = (curses.A_BOLD, 0, 0, 0, 0, 0, 0, 0, 0, 0)
     try:
         if curses.COLORS < 256:
             return _no_color
@@ -194,6 +197,10 @@ def init_sidebar_colors() -> tuple[int, int, int, int, int, int, int, int]:
     curses.init_pair(COLOR_PAIR_SESSION_HL, session_color, bg_color)
     curses.init_pair(COLOR_PAIR_WINDOW_HL, window_color, bg_color)
     curses.init_pair(COLOR_PAIR_PANE_HL, pane_color, bg_color)
+    alert_hex = _option_hex_suffix("color_alert") or DEFAULT_ALERT_FG
+    alert_color = _define_color(244, alert_hex)
+    curses.init_pair(COLOR_PAIR_ALERT, alert_color, -1)
+    curses.init_pair(COLOR_PAIR_ALERT_HL, alert_color, bg_color)
     return (
         curses.A_BOLD,
         curses.color_pair(COLOR_PAIR_SESSION),
@@ -203,6 +210,8 @@ def init_sidebar_colors() -> tuple[int, int, int, int, int, int, int, int]:
         curses.color_pair(COLOR_PAIR_SESSION_HL),
         curses.color_pair(COLOR_PAIR_WINDOW_HL),
         curses.color_pair(COLOR_PAIR_PANE_HL),
+        curses.color_pair(COLOR_PAIR_ALERT),
+        curses.color_pair(COLOR_PAIR_ALERT_HL),
     )
 
 
@@ -227,6 +236,8 @@ def render_screen(
     session_hl_attr: int = 0,
     window_hl_attr: int = 0,
     pane_hl_attr: int = 0,
+    alert_attr: int = 0,
+    alert_hl_attr: int = 0,
 ) -> None:
     width = max(0, curses.COLS - 1)
     has_search_bar = search_mode or bool(search_query)
@@ -242,6 +253,7 @@ def render_screen(
         row_idx = y + scroll_offset
         row = rows[row_idx] if row_idx < len(rows) else None
         kind = row["kind"] if row else None
+        is_alert = row is not None and row.get("status") in ("needs-input", "done")
         is_selected = selected_row is not None and row_idx == selected_row
         is_match = bool(search_matches) and row_idx in search_matches
         label_start = _label_start(line)
@@ -255,7 +267,9 @@ def render_screen(
             remaining = width - label_start
             if remaining > 0 and label_start < len(line):
                 label = line[label_start:]
-                if kind == "session":
+                if is_alert:
+                    kind_hl = alert_hl_attr
+                elif kind == "session":
                     kind_hl = session_hl_attr
                 elif kind == "window":
                     kind_hl = window_hl_attr
@@ -268,7 +282,9 @@ def render_screen(
             remaining = width - label_start
             if remaining > 0 and label_start < len(line):
                 label = line[label_start:]
-                if is_selected:
+                if is_alert:
+                    attr = alert_attr | (match_attr if is_match else 0)
+                elif is_selected:
                     attr = active_attr | (match_attr if is_match else 0)
                 elif kind == "session":
                     attr = session_attr | (match_attr if is_match else 0)

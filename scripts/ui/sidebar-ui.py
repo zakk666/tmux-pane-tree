@@ -287,10 +287,12 @@ def run_interactive(stdscr) -> None:
         curses.start_color()
         curses.use_default_colors()
         (active_attr, session_attr, window_attr, pane_attr,
-         hl_attr, session_hl_attr, window_hl_attr, pane_hl_attr) = init_sidebar_colors()
+         hl_attr, session_hl_attr, window_hl_attr, pane_hl_attr,
+         alert_attr, alert_hl_attr) = init_sidebar_colors()
     except curses.error:
         (active_attr, session_attr, window_attr, pane_attr,
-         hl_attr, session_hl_attr, window_hl_attr, pane_hl_attr) = curses.A_BOLD, 0, 0, 0, 0, 0, 0, 0
+         hl_attr, session_hl_attr, window_hl_attr, pane_hl_attr,
+         alert_attr, alert_hl_attr) = curses.A_BOLD, 0, 0, 0, 0, 0, 0, 0, 0, 0
     if hasattr(curses, "set_escdelay"):
         curses.set_escdelay(ESC_DELAY_MS)
     stdscr.keypad(True)
@@ -373,6 +375,8 @@ def run_interactive(stdscr) -> None:
                 session_hl_attr,
                 window_hl_attr,
                 pane_hl_attr,
+                alert_attr,
+                alert_hl_attr,
             )
             _write_row_map(rows, scroll_offset)
             needs_render = False

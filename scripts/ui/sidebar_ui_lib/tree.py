@@ -4,8 +4,26 @@ import json
 import subprocess
 from collections import OrderedDict
 
+import time
+
 from .core import STATE_DIR, configured_sidebar_width, is_sidebar_pane, run_tmux, tmux_option, tmux_option_value
 from .status import badge_for_status, effective_pane_status, live_agent_app, normalize_token, pane_display_label, pane_icon, window_display_name
+
+
+def _clear_done_for_active_pane(pane_id: str, pane_state: dict) -> None:
+    if pane_state.get("status") != "done":
+        return
+    updated_at = pane_state.get("updated_at", 0)
+    if time.time() - updated_at < 5:
+        return
+    state_file = STATE_DIR / f"pane-{pane_id}.json"
+    pane_state["status"] = "idle"
+    try:
+        tmp = state_file.with_suffix(".tmp")
+        tmp.write_text(json.dumps(pane_state))
+        tmp.rename(state_file)
+    except OSError:
+        pass
 
 
 def ordered_sessions(sessions: OrderedDict[str, dict]) -> list[dict]:
@@ -163,7 +181,10 @@ def load_tree() -> list[dict]:
             for pane_index, pane in enumerate(visible_panes):
                 pane_last = pane_index == len(visible_panes) - 1
                 pane_state = pane_states.get(pane["id"], {})
-                badge = badge_for_status(effective_pane_status(pane["id"], pane["label"], pane["title"], pane_state))
+                if pane["active"]:
+                    _clear_done_for_active_pane(pane["id"], pane_state)
+                status = effective_pane_status(pane["id"], pane["label"], pane["title"], pane_state)
+                badge = badge_for_status(status)
                 label = pane_display_label(pane["label"], pane["title"], pane_state)
                 icon = pane_icon(pane["label"], pane["title"], pane_state)
                 if icon:
@@ -177,6 +198,7 @@ def load_tree() -> list[dict]:
                         "session": pane["session"],
                         "window": pane["window"],
                         "active": pane["active"],
+                        "status": status,
                         "text": f"{window_prefix}{'└─' if pane_last else '├─'} {label}",
                     }
                 )
