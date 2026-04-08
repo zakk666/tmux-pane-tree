@@ -320,7 +320,7 @@ def run_interactive(stdscr) -> None:
         signaled = _refresh_requested
         if signaled:
             _refresh_requested = False
-        if next_refresh_at == 0.0 or signaled or now >= next_refresh_at:
+        if next_refresh_at == 0.0 or now >= next_refresh_at:
             prev_pane = selected_pane_id
             rows, pane_rows, shortcuts, selected_pane_id = load_view_state(selected_pane_id)
             has_focus = sidebar_has_focus()
@@ -357,6 +357,20 @@ def run_interactive(stdscr) -> None:
             max_offset = max(0, len(rows) - visible_lines)
             scroll_offset = max(0, min(scroll_offset, max_offset))
             needs_render = True
+        elif signaled and pane_rows:
+            new_pane = tmux_option("@tmux_sidebar_main_pane")
+            if new_pane and new_pane != selected_pane_id:
+                new_pane = reconcile_selected_pane(new_pane, pane_rows)
+                if new_pane != selected_pane_id:
+                    selected_pane_id = new_pane
+                    user_scrolled = False
+                    visible_lines = curses.LINES - (1 if search_mode or search_query else 0)
+                    selected_index = find_selected_row_index(rows, selected_pane_id)
+                    scroll_offset = ensure_visible(selected_index, scroll_offset, visible_lines, scrolloff)
+                    max_offset = max(0, len(rows) - visible_lines)
+                    scroll_offset = max(0, min(scroll_offset, max_offset))
+                    needs_render = True
+            next_refresh_at = min(next_refresh_at, now + 0.5)
 
         if needs_render:
             render_screen(
