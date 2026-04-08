@@ -15,6 +15,7 @@ if [ -n "$pane_id" ]; then
   pane_command="$(tmux display-message -p -t "$pane_id" '#{pane_current_command}' 2>/dev/null || true)"
   if ! is_sidebar_pane "$pane_title" "$pane_command"; then
     tmux set-option -g @tmux_sidebar_main_pane "$pane_id"
+    signal_sidebar_refresh
   fi
 
   if [[ "$pane_id" =~ ^%[0-9]+$ ]]; then
