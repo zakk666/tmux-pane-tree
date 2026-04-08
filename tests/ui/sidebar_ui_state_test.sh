@@ -30,7 +30,7 @@ output="$(python3 scripts/ui/sidebar-ui.py --dump-render 2>&1)"
 
 assert_contains "$output" '├─ work'
 assert_contains "$output" '│     └─ C claude'
-assert_contains "$output" '▶       └─ : tail'
+assert_contains "$output" '▸       └─ : tail'
 case "$output" in
   *'%99 Sidebar'* ) fail "sidebar pane should be hidden when window has other panes" ;;
 esac

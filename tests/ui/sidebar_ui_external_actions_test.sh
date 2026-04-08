@@ -87,7 +87,7 @@ class FakeScreen:
 def selected_history(frames):
     history = []
     for frame in frames:
-        selected = next((line.replace("▶ ", "", 1).strip() for line in frame if line.startswith("▶ ")), None)
+        selected = next((line.replace("▸ ", "", 1).strip() for line in frame if line.startswith("▸ ")), None)
         if selected is None:
             continue
         if not history or history[-1] != selected:
@@ -196,7 +196,7 @@ class FakeScreen:
 def selected_history(frames):
     history = []
     for frame in frames:
-        selected = next((line.replace("▶ ", "", 1).strip() for line in frame if line.startswith("▶ ")), None)
+        selected = next((line.replace("▸ ", "", 1).strip() for line in frame if line.startswith("▸ ")), None)
         if selected is None:
             continue
         if not history or history[-1] != selected:
@@ -316,7 +316,7 @@ class FakeScreen:
 def selected_history(frames):
     history = []
     for frame in frames:
-        selected = next((line.replace("▶ ", "", 1).strip() for line in frame if line.startswith("▶ ")), None)
+        selected = next((line.replace("▸ ", "", 1).strip() for line in frame if line.startswith("▸ ")), None)
         if selected is None:
             continue
         if not history or history[-1] != selected:

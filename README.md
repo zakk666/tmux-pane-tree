@@ -16,7 +16,7 @@ side of every window, with live badges for `claude`, `codex`, `cursor`, and `ope
   │      ├─ claude       │                                │
   │      │  ├─ claude    │                                │
   │      │  ├─ lazygit   │                                │
-  │ ▶    │  ├─ claude ⏳│                                │
+  │ ▸    │  ├─ claude ⏳│                                │
   │      │  └─ yazi      │                                │
   │      └─ yazi         │                                │
   │         ├─ yazi      │                                │
@@ -297,8 +297,14 @@ set -g @tmux_pane_tree_color_window  "#4a5568"
 set -g @tmux_pane_tree_color_pane    "#a0aec0"
 ```
 
+Override the cursor line highlight background:
+
+```tmux
+set -g @tmux_pane_tree_color_highlight_bg "#383838"   # default: #2d2d2d
+```
+
 Values are hex colors. When unset, tmux-pane-tree derives them from your tmux
-theme.
+theme. The cursor line highlight requires 256-color support.
 
 ### Key overrides
 
@@ -345,6 +351,7 @@ set -g @tmux_pane_tree_install_agent_hooks 1   # default: 0
 | `@tmux_pane_tree_color_session`         |    —    | Session name color (hex)         |
 | `@tmux_pane_tree_color_window`          |    —    | Window name color (hex)          |
 | `@tmux_pane_tree_color_pane`            |    —    | Pane name color (hex)            |
+| `@tmux_pane_tree_color_highlight_bg`    |    —    | Cursor line background (hex, default `#2d2d2d`) |
 | `@tmux_pane_tree_toggle_key`            |   `t`   | Tmux key to toggle sidebar       |
 | `@tmux_pane_tree_focus_key`             |   `T`   | Tmux key to focus sidebar        |
 | `@tmux_pane_tree_install_agent_hooks`   |   `0`   | Install Claude/Codex/Cursor/OpenCode hooks on load |

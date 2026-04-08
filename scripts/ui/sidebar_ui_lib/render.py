@@ -15,7 +15,12 @@ from .tree import find_selected_row_index, render_rows, truncate_line
 COLOR_PAIR_SESSION = 1
 COLOR_PAIR_WINDOW = 2
 COLOR_PAIR_PANE = 3
+COLOR_PAIR_HIGHLIGHT = 4
+COLOR_PAIR_SESSION_HL = 5
+COLOR_PAIR_WINDOW_HL = 6
+COLOR_PAIR_PANE_HL = 7
 DEFAULT_COLOR_FG = "ffffff"
+DEFAULT_HIGHLIGHT_BG = "2d2d2d"
 _HEX_COLOR_RE = re.compile(r"#([0-9a-fA-F]{6})")
 _CUBE_VALUES = [0, 95, 135, 175, 215, 255]
 _last_row_map_json = ""
@@ -152,12 +157,13 @@ def _parse_border_format_colors() -> dict[str, str]:
     return colors
 
 
-def init_sidebar_colors() -> tuple[int, int, int, int]:
+def init_sidebar_colors() -> tuple[int, int, int, int, int, int, int, int]:
+    _no_color = (curses.A_BOLD, 0, 0, 0, 0, 0, 0, 0)
     try:
         if curses.COLORS < 256:
-            return curses.A_BOLD, 0, 0, 0
+            return _no_color
     except AttributeError:
-        return curses.A_BOLD, 0, 0, 0
+        return _no_color
     fmt_colors = _parse_border_format_colors()
     session_hex = (
         _option_hex_suffix("color_session")
@@ -176,14 +182,27 @@ def init_sidebar_colors() -> tuple[int, int, int, int]:
         or parse_fg_hex(tmux_option("status-style"))
         or DEFAULT_COLOR_FG
     )
-    curses.init_pair(COLOR_PAIR_SESSION, _define_color(240, session_hex), -1)
-    curses.init_pair(COLOR_PAIR_WINDOW, _define_color(241, window_hex), -1)
-    curses.init_pair(COLOR_PAIR_PANE, _define_color(242, pane_hex), -1)
+    session_color = _define_color(240, session_hex)
+    window_color = _define_color(241, window_hex)
+    pane_color = _define_color(242, pane_hex)
+    curses.init_pair(COLOR_PAIR_SESSION, session_color, -1)
+    curses.init_pair(COLOR_PAIR_WINDOW, window_color, -1)
+    curses.init_pair(COLOR_PAIR_PANE, pane_color, -1)
+    highlight_bg_hex = _option_hex_suffix("color_highlight_bg") or DEFAULT_HIGHLIGHT_BG
+    bg_color = _define_color(243, highlight_bg_hex)
+    curses.init_pair(COLOR_PAIR_HIGHLIGHT, -1, bg_color)
+    curses.init_pair(COLOR_PAIR_SESSION_HL, session_color, bg_color)
+    curses.init_pair(COLOR_PAIR_WINDOW_HL, window_color, bg_color)
+    curses.init_pair(COLOR_PAIR_PANE_HL, pane_color, bg_color)
     return (
         curses.A_BOLD,
         curses.color_pair(COLOR_PAIR_SESSION),
         curses.color_pair(COLOR_PAIR_WINDOW),
         curses.color_pair(COLOR_PAIR_PANE),
+        curses.color_pair(COLOR_PAIR_HIGHLIGHT),
+        curses.color_pair(COLOR_PAIR_SESSION_HL),
+        curses.color_pair(COLOR_PAIR_WINDOW_HL),
+        curses.color_pair(COLOR_PAIR_PANE_HL),
     )
 
 
@@ -204,6 +223,10 @@ def render_screen(
     session_attr: int = 0,
     window_attr: int = 0,
     pane_attr: int = 0,
+    hl_attr: int = 0,
+    session_hl_attr: int = 0,
+    window_hl_attr: int = 0,
+    pane_hl_attr: int = 0,
 ) -> None:
     width = max(0, curses.COLS - 1)
     has_search_bar = search_mode or bool(search_query)
@@ -222,19 +245,38 @@ def render_screen(
         is_selected = selected_row is not None and row_idx == selected_row
         is_match = bool(search_matches) and row_idx in search_matches
         label_start = _label_start(line)
-        stdscr.addnstr(y, 0, line[:label_start], width)
-        remaining = width - label_start
-        if remaining > 0 and label_start < len(line):
-            label = line[label_start:]
-            if is_selected:
-                attr = active_attr | (match_attr if is_match else 0)
-            elif kind == "session":
-                attr = session_attr | (match_attr if is_match else 0)
-            elif kind == "window":
-                attr = window_attr | (match_attr if is_match else 0)
-            else:
-                attr = pane_attr | (match_attr if is_match else 0)
-            stdscr.addnstr(y, label_start, label, remaining, attr)
+        if is_selected and hl_attr:
+            stdscr.addnstr(y, 0, " " * width, width, hl_attr)
+            try:
+                stdscr.addstr(y, width, " ", hl_attr)
+            except curses.error:
+                pass
+            stdscr.addnstr(y, 0, line[:label_start], width, hl_attr)
+            remaining = width - label_start
+            if remaining > 0 and label_start < len(line):
+                label = line[label_start:]
+                if kind == "session":
+                    kind_hl = session_hl_attr
+                elif kind == "window":
+                    kind_hl = window_hl_attr
+                else:
+                    kind_hl = pane_hl_attr
+                attr = active_attr | kind_hl | (match_attr if is_match else 0)
+                stdscr.addnstr(y, label_start, label, remaining, attr)
+        else:
+            stdscr.addnstr(y, 0, line[:label_start], width)
+            remaining = width - label_start
+            if remaining > 0 and label_start < len(line):
+                label = line[label_start:]
+                if is_selected:
+                    attr = active_attr | (match_attr if is_match else 0)
+                elif kind == "session":
+                    attr = session_attr | (match_attr if is_match else 0)
+                elif kind == "window":
+                    attr = window_attr | (match_attr if is_match else 0)
+                else:
+                    attr = pane_attr | (match_attr if is_match else 0)
+                stdscr.addnstr(y, label_start, label, remaining, attr)
     if has_search_bar:
         prompt = f"/{search_query}"
         prompt_line = curses.LINES - 1

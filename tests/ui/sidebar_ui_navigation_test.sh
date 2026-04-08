@@ -88,7 +88,7 @@ PY
 
 assert_contains "$output" '"close_calls": 1'
 assert_contains "$output" '"load_calls": 1'
-assert_contains "$output" '▶ pane two'
+assert_contains "$output" '▸ pane two'
 
 output="$(python3 - <<'PY'
 import importlib.util
@@ -159,10 +159,10 @@ screen = FakeScreen([ord("G"), ord("g"), ord("g"), ord("q")])
 module.run_interactive(screen)
 
 bottom_selected = any(
-    any("▶ pane three" in line for line in frame)
+    any("▸ pane three" in line for line in frame)
     for frame in screen.frames
 )
-top_selected_after_gg = any("▶ pane one" in line for line in screen.frames[-1])
+top_selected_after_gg = any("▸ pane one" in line for line in screen.frames[-1])
 
 print(
     json.dumps(
@@ -251,7 +251,7 @@ class FakeScreen:
 def selected_history(frames):
     history = []
     for frame in frames:
-        selected = next((line.replace("▶ ", "", 1).strip() for line in frame if line.startswith("▶ ")), None)
+        selected = next((line.replace("▸ ", "", 1).strip() for line in frame if line.startswith("▸ ")), None)
         if selected is None:
             continue
         if not history or history[-1] != selected:
@@ -356,7 +356,7 @@ class FakeScreen:
 def selected_history(frames):
     history = []
     for frame in frames:
-        selected = next((line.replace("▶ ", "", 1).strip() for line in frame if line.startswith("▶ ")), None)
+        selected = next((line.replace("▸ ", "", 1).strip() for line in frame if line.startswith("▸ ")), None)
         if selected is None:
             continue
         if not history or history[-1] != selected:
@@ -456,7 +456,7 @@ class FakeScreen:
 def selected_history(frames):
     history = []
     for frame in frames:
-        selected = next((line.replace("▶ ", "", 1).strip() for line in frame if line.startswith("▶ ")), None)
+        selected = next((line.replace("▸ ", "", 1).strip() for line in frame if line.startswith("▸ ")), None)
         if selected is None:
             continue
         if not history or history[-1] != selected:
@@ -553,7 +553,7 @@ class FakeScreen:
 def selected_history(frames):
     history = []
     for frame in frames:
-        selected = next((line.replace("▶ ", "", 1).strip() for line in frame if line.startswith("▶ ")), None)
+        selected = next((line.replace("▸ ", "", 1).strip() for line in frame if line.startswith("▸ ")), None)
         if selected is None:
             continue
         if not history or history[-1] != selected:
@@ -652,7 +652,7 @@ class FakeScreen:
 def selected_history(frames):
     history = []
     for frame in frames:
-        selected = next((line.replace("▶ ", "", 1).strip() for line in frame if line.startswith("▶ ")), None)
+        selected = next((line.replace("▸ ", "", 1).strip() for line in frame if line.startswith("▸ ")), None)
         if selected is None:
             continue
         if not history or history[-1] != selected:
@@ -769,7 +769,7 @@ PY
 )"
 
 assert_contains "$output" '"close_calls": 1'
-assert_contains "$output" '▶ pane one'
+assert_contains "$output" '▸ pane one'
 assert_file_contains "$TEST_TMUX_DATA_DIR/commands.log" 'kill-pane -t %1'
 assert_file_not_contains "$TEST_TMUX_DATA_DIR/commands.log" 'kill-pane -t %2'
 

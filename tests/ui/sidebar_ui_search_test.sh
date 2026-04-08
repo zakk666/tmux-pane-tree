@@ -106,7 +106,7 @@ PY
 )"
 
 assert_contains "$output" '"close_calls": 1'
-assert_contains "$output" '▶ vim-two'
+assert_contains "$output" '▸ vim-two'
 
 # Test 2: Esc during search input cancels search
 output="$(python3 - <<'PY'
@@ -482,7 +482,7 @@ PY
 )"
 
 assert_contains "$output" '"close_calls": 1'
-assert_contains "$output" '▶ vim-two'
+assert_contains "$output" '▸ vim-two'
 
 # Test 6: Backspace during search input removes last character
 output="$(python3 - <<'PY'
@@ -572,4 +572,4 @@ PY
 
 assert_contains "$output" '"close_calls": 1'
 # "zsh" matches "z", so it should be selected
-assert_contains "$output" '▶ zsh'
+assert_contains "$output" '▸ zsh'

@@ -226,7 +226,7 @@ module.run_interactive(screen)
 selections = []
 for frame in screen.frames:
     for line in frame:
-        if "▶" in line:
+        if "▸" in line:
             selections.append(line.strip())
             break
 
@@ -235,9 +235,9 @@ PY
 )"
 
 # Cursor should visit: @1 (editor), @2 (logs), %5 (claude), @2 (logs)
-assert_contains "$output" '"▶ editor"'
-assert_contains "$output" '"▶ logs"'
-assert_contains "$output" '"▶ claude ⏳"'
+assert_contains "$output" '"▸ editor"'
+assert_contains "$output" '"▸ logs"'
+assert_contains "$output" '"▸ claude ⏳"'
 
 # Test x on a collapsed window: kill-window when session has multiple windows
 output="$(python3 - <<'PY'

@@ -237,7 +237,7 @@ module.run_interactive(screen)
 
 # Cursor indicator should never appear on any pane other than pane one
 cursor_moved = any(
-    any("▶" in line and "pane one" not in line for line in frame)
+    any("▸" in line and "pane one" not in line for line in frame)
     for frame in screen.frames
 )
 

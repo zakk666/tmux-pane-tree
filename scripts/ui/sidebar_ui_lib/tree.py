@@ -202,7 +202,7 @@ def render_rows(rows: list[dict], selected_pane_id: str | None = None, max_width
         None,
     )
     for index, row in enumerate(rows):
-        prefix = "▶ " if index == selected_row else "  "
+        prefix = "▸ " if index == selected_row else "  "
         rendered.append(truncate_line(prefix + row["text"], max_width))
     return rendered
 
