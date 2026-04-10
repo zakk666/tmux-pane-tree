@@ -24,6 +24,7 @@ from sidebar_ui_lib.core import (
     MOUSE_SCROLL_DOWN,
     MOUSE_SCROLL_LINES,
     REFRESH_INTERVAL_SECONDS,
+    SELECTION_POLL_SECONDS,
     SHORTCUTS_CACHE_TTL_SECONDS,
     STATE_DIR,
     close_sidebar,
@@ -306,6 +307,8 @@ def run_interactive(stdscr) -> None:
     shortcuts = dict(DEFAULT_SHORTCUTS)
     scrolloff = DEFAULT_SCROLLOFF
     next_refresh_at = 0.0
+    next_selection_at = 0.0
+    selection_poll = tmux_option_value("selection_poll").lower() in ("on", "1", "true", "yes")
     scroll_offset = 0
     user_scrolled = False
     needs_render = True
@@ -371,6 +374,21 @@ def run_interactive(stdscr) -> None:
                     scroll_offset = max(0, min(scroll_offset, max_offset))
                     needs_render = True
             next_refresh_at = min(next_refresh_at, now + 0.5)
+
+        if selection_poll and pane_rows and now >= next_selection_at:
+            next_selection_at = now + SELECTION_POLL_SECONDS
+            polled_pane = tmux_option("@tmux_sidebar_main_pane")
+            if polled_pane and polled_pane != selected_pane_id:
+                polled_pane = reconcile_selected_pane(polled_pane, pane_rows)
+                if polled_pane != selected_pane_id:
+                    selected_pane_id = polled_pane
+                    user_scrolled = False
+                    visible_lines = curses.LINES - (1 if search_mode or search_query else 0)
+                    selected_index = find_selected_row_index(rows, selected_pane_id)
+                    scroll_offset = ensure_visible(selected_index, scroll_offset, visible_lines, scrolloff)
+                    max_offset = max(0, len(rows) - visible_lines)
+                    scroll_offset = max(0, min(scroll_offset, max_offset))
+                    needs_render = True
 
         if needs_render:
             render_screen(

@@ -367,6 +367,10 @@ signal_sidebar_refresh() {
     [ -e "$pid_file" ] || continue
     pid="$(cat "$pid_file" 2>/dev/null || true)"
     [ -n "$pid" ] || continue
+    if ! kill -0 "$pid" 2>/dev/null; then
+      rm -f "$pid_file"
+      continue
+    fi
     kill -USR1 "$pid" 2>/dev/null || true
   done
 }
